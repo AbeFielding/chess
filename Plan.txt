@@ -1,1 +1,8 @@
-"go here" 
+Step 1 create the board.
+    ChessBoard
+        Need to make an array that creates the board. 8 rows with 8 columns. private that goes outside any methods.
+Step 2 clearing the board
+    ChessBoard
+        Need to call the resetboard method inside the chessboard. Then inside the reset method we need to make a loop that goes through
+        our board array and sets everything to null
+Step 3
