@@ -29,3 +29,6 @@ Step 7
         Begin logic for Rook and Bishop move cases.
         move logic for all four straight directions (up, down, left, right).
         move logic for all four diagonal directions (up-right, up-left, down-right, down-left), using for-loops.
+Step 8
+    ChessPiece
+        Implemented queen. It is just the rook and bishop move cases combined.
