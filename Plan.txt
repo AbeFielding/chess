@@ -24,3 +24,8 @@ Step 6
         add private fields to chessmove based upon the method chessmove
         write the constructors this.blank = blank
         write the getters return blank
+Step 7
+    ChessPiece
+        Begin logic for Rook and Bishop move cases.
+        move logic for all four straight directions (up, down, left, right).
+        move logic for all four diagonal directions (up-right, up-left, down-right, down-left), using for-loops.
