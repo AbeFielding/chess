@@ -35,3 +35,6 @@ Step 8
 Step 9
     ChessPiece
         Implemented King logic.
+Step 10
+    ChessPiece
+        Implemented knight logic

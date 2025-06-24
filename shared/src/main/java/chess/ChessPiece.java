@@ -277,17 +277,32 @@ public class ChessPiece {
                 }
             }
         } else if (this.getPieceType() == PieceType.KING) {
-            // All 8 directions: up, down, left, right, and diagonals (just one square)
+            // All 8 directions: up, down, left, right, and diagonals but just one square
             int[] dRows = {-1, -1, -1,  0, 0, 1, 1, 1};
             int[] dCols = {-1,  0,  1, -1, 1,-1, 0, 1};
             for (int i = 0; i < 8; i++) {
                 int newRow = row + dRows[i];
                 int newCol = col + dCols[i];
-                // Check bounds (1-based indexing)
+                // Check if in bounds
                 if (newRow >= 1 && newRow <= 8 && newCol >= 1 && newCol <= 8) {
                     ChessPosition newPos = new ChessPosition(newRow, newCol);
                     ChessPiece pieceAtNewPos = board.getPiece(newPos);
-                    // If the target square is empty or has an enemy piece, add as a move
+                    if (pieceAtNewPos == null || pieceAtNewPos.getTeamColor() != this.getTeamColor()) {
+                        moves.add(new ChessMove(myPosition, newPos, null));
+                    }
+                }
+            }
+        }
+        else if (this.getPieceType() == PieceType.KNIGHT) {
+            // All possible (row, col) knight moves
+            int[] dRows = {-2, -1, 1, 2, 2, 1, -1, -2};
+            int[] dCols = {1, 2, 2, 1, -1, -2, -2, -1};
+            for (int i = 0; i < 8; i++) {
+                int newRow = row + dRows[i];
+                int newCol = col + dCols[i];
+                if (newRow >= 1 && newRow <= 8 && newCol >= 1 && newCol <= 8) {
+                    ChessPosition newPos = new ChessPosition(newRow, newCol);
+                    ChessPiece pieceAtNewPos = board.getPiece(newPos);
                     if (pieceAtNewPos == null || pieceAtNewPos.getTeamColor() != this.getTeamColor()) {
                         moves.add(new ChessMove(myPosition, newPos, null));
                     }
