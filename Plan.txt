@@ -12,8 +12,8 @@ Step 3
 Step 4
     ChessBoard
     ChessPiece
-        In resetBoard, after clearing the board, use addPiece to add all black major pieces to row 1 and black pawns to row 2.
-        Use addPiece to place all white major pieces on row 8 and white pawns on row 7.
+        In resetBoard, after clearing the board, use addPiece to add all black major pieces to row 8 and black pawns to row 7.
+        Use addPiece to place all white major pieces on row 1 and white pawns on row 2.
         In ChessPiece, make sure the constructor saves type and color, and the getters return those values (similar to Step 3).
 Step 5
     ChessBoard
