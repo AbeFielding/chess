@@ -32,3 +32,6 @@ Step 7
 Step 8
     ChessPiece
         Implemented queen. It is just the rook and bishop move cases combined.
+Step 9
+    ChessPiece
+        Implemented King logic.
