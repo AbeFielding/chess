@@ -19,3 +19,8 @@ Step 5
     ChessBoard
         Implement the getPiece method. Use ChessPosition to get the right row and column, (similar to addpiece method)
         return the ChessPiece at that position (or null if empty).
+Step 6
+    ChessMove
+        add private fields to chessmove based upon the method chessmove
+        write the constructors this.blank = blank
+        write the getters return blank
