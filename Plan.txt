@@ -38,3 +38,6 @@ Step 9
 Step 10
     ChessPiece
         Implemented knight logic
+Step 11
+    ChessPiece
+        Implemented Pawn and promotion logic.
