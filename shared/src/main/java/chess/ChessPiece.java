@@ -66,19 +66,29 @@ public class ChessPiece {
 
         PieceType type = this.getPieceType();
 
-        // Sliding pieces: Rook, Bishop, Queen
-        if (type == PieceType.ROOK || type == PieceType.BISHOP || type == PieceType.QUEEN) {
-            int[][] directions;
-            if (type == PieceType.ROOK) {
-                directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1} };
-            } else if (type == PieceType.BISHOP) {
-                directions = new int[][] { {1,1}, {1,-1}, {-1,1}, {-1,-1} };
-            } else { // Queen
-                directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} };
-            }
+        int[][] directions;
+        int maxSteps = 8; // Default for sliders
+
+        if (type == PieceType.ROOK) {
+            directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1} };
+        } else if (type == PieceType.BISHOP) {
+            directions = new int[][] { {1,1}, {1,-1}, {-1,1}, {-1,-1} };
+        } else if (type == PieceType.QUEEN) {
+            directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} };
+        } else if (type == PieceType.KING) {
+            directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} };
+            maxSteps = 1; // King only steps one square
+        } else {
+            directions = null; // Not a slider or king
+        }
+
+        if (directions != null) {
             for (int[] dir : directions) {
-                int r = row + dir[0], c = col + dir[1];
-                while (r >= 1 && r <= 8 && c >= 1 && c <= 8) {
+                int r = row, c = col;
+                for (int step = 1; step <= maxSteps; step++) {
+                    r += dir[0];
+                    c += dir[1];
+                    if (r < 1 || r > 8 || c < 1 || c > 8) break;
                     ChessPosition newPos = new ChessPosition(r, c);
                     ChessPiece pieceAtNewPos = board.getPiece(newPos);
                     if (pieceAtNewPos == null) {
@@ -88,24 +98,6 @@ public class ChessPiece {
                             moves.add(new ChessMove(myPosition, newPos, null));
                         }
                         break;
-                    }
-                    r += dir[0];
-                    c += dir[1];
-                }
-            }
-        }
-        // King
-        else if (type == PieceType.KING) {
-            int[] dRows = {-1, -1, -1, 0, 0, 1, 1, 1};
-            int[] dCols = {-1, 0, 1, -1, 1, -1, 0, 1};
-            for (int i = 0; i < 8; i++) {
-                int newRow = row + dRows[i];
-                int newCol = col + dCols[i];
-                if (newRow >= 1 && newRow <= 8 && newCol >= 1 && newCol <= 8) {
-                    ChessPosition newPos = new ChessPosition(newRow, newCol);
-                    ChessPiece pieceAtNewPos = board.getPiece(newPos);
-                    if (pieceAtNewPos == null || pieceAtNewPos.getTeamColor() != this.getTeamColor()) {
-                        moves.add(new ChessMove(myPosition, newPos, null));
                     }
                 }
             }
