@@ -77,9 +77,9 @@ public class ChessPiece {
             directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} };
         } else if (type == PieceType.KING) {
             directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} };
-            maxSteps = 1; // King only steps one square
+            maxSteps = 1; 
         } else {
-            directions = null; // Not a slider or king
+            directions = null;
         }
 
         if (directions != null) {
