@@ -67,7 +67,7 @@ public class ChessPiece {
         PieceType type = this.getPieceType();
 
         int[][] directions;
-        int maxSteps = 8; // Default for sliders
+        int maxSteps = 8;
 
         if (type == PieceType.ROOK) {
             directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1} };
@@ -77,7 +77,7 @@ public class ChessPiece {
             directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} };
         } else if (type == PieceType.KING) {
             directions = new int[][] { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} };
-            maxSteps = 1; 
+            maxSteps = 1;
         } else {
             directions = null;
         }
@@ -118,7 +118,7 @@ public class ChessPiece {
                 }
             }
         }
-        // Pawn (special case)
+        // Pawn
         else if (type == PieceType.PAWN) {
             int direction = (this.getTeamColor() == ChessGame.TeamColor.WHITE) ? 1 : -1;
             int startRow = (this.getTeamColor() == ChessGame.TeamColor.WHITE) ? 2 : 7;
