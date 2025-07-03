@@ -32,7 +32,7 @@ public class ChessGame {
      * @param team the team whose turn it is
      */
     public void setTeamTurn(TeamColor team) {
-        return this.currentTurn = team;
+        this.currentTurn = team;
     }
 
     /**
@@ -61,9 +61,29 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        throw new RuntimeException("Not implemented");
+        ChessPosition start = move.getStartPosition();
+        ChessPiece movingPiece = board.getPiece(start);
+
+        if (movingPiece == null) {
+            throw new InvalidMoveException("No piece at start position.");
+        }
+        if (movingPiece.getTeamColor() != currentTurn) {
+            throw new InvalidMoveException("It's not " + movingPiece.getTeamColor() + "'s turn.");
+        }
+
+        board.addPiece(move.getEndPosition(), movingPiece);
+        board.addPiece(start, null);
+
+        changeTurn();
     }
 
+    private void changeTurn() {
+        if (this.currentTurn == TeamColor.WHITE) {
+            this.currentTurn = TeamColor.BLACK;
+        } else {
+            this.currentTurn = TeamColor.WHITE;
+        }
+    }
     /**
      * Determines if the given team is in check
      *
