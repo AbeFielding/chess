@@ -113,6 +113,27 @@ public class Main {
             res.status(200);
             return gson.toJson(game);
         });
+
+        // List games
+        get("/game", (req, res) -> {
+            res.type("application/json");
+
+            // Check Authorization header and token
+            String authHeader = req.headers("Authorization");
+            String username = tokens.get(authHeader);
+            if (authHeader == null || username == null) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+            }
+
+            // Return all games as a list
+            List<GameData> allGames = new ArrayList<>(games.values());
+            Map<String, Object> response = new HashMap<>();
+            response.put("games", allGames);
+
+            res.status(200);
+            return gson.toJson(response);
+        });
     }
 
     static class UserRequest {
