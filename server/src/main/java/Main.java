@@ -2,11 +2,14 @@ import static spark.Spark.*;
 import com.google.gson.Gson;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
     static ConcurrentHashMap<String, String> users = new ConcurrentHashMap<>();
     static ConcurrentHashMap<String, String> tokens = new ConcurrentHashMap<>();
     static Gson gson = new Gson();
+    static ConcurrentHashMap<Integer, GameData> games = new ConcurrentHashMap<>();
+    static AtomicInteger nextGameId = new AtomicInteger(1);
 
     public static void main(String[] args) {
         port(8080);
@@ -85,5 +88,24 @@ public class Main {
     static class ErrorResponse {
         String message;
         ErrorResponse(String message) { this.message = message; }
+    }
+    static class GameRequest {
+        String gameName;
+    }
+
+    static class GameData {
+        int gameID;
+        String gameName;
+        String whiteUsername;
+        String blackUsername;
+        Object game;
+
+        GameData(int gameID, String gameName, String whiteUsername, String blackUsername, Object game) {
+            this.gameID = gameID;
+            this.gameName = gameName;
+            this.whiteUsername = whiteUsername;
+            this.blackUsername = blackUsername;
+            this.game = game;
+        }
     }
 }
