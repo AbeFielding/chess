@@ -27,15 +27,20 @@ public class Main {
 
             if (body == null || body.username == null || body.password == null) {
                 res.status(400);
-                return gson.toJson(new ErrorResponse("Missing username or password"));
+                return gson.toJson(new ErrorResponse("Error: Missing username or password"));
             }
             if (users.containsKey(body.username)) {
                 res.status(403);
-                return gson.toJson(new ErrorResponse("Username already taken"));
+                return gson.toJson(new ErrorResponse("Error: Username already taken"));
             }
             users.put(body.username, body.password);
+
+            //reg token
+            String token = UUID.randomUUID().toString();
+            tokens.put(token, body.username);
+
             res.status(200);
-            return gson.toJson(new UserResponse(body.username));
+            return gson.toJson(new AuthResponse(body.username, token));
         });
 
         // User login
@@ -45,18 +50,18 @@ public class Main {
 
             if (body == null || body.username == null || body.password == null) {
                 res.status(400);
-                return gson.toJson(new ErrorResponse("Missing username or password"));
+                return gson.toJson(new ErrorResponse("Error: Missing username or password"));
             }
             String correctPassword = users.get(body.username);
             if (correctPassword == null || !correctPassword.equals(body.password)) {
                 res.status(401);
-                return gson.toJson(new ErrorResponse("Invalid username or password"));
+                return gson.toJson(new ErrorResponse("Error: Invalid username or password"));
             }
             String token = UUID.randomUUID().toString();
             tokens.put(token, body.username);
 
             res.status(200);
-            return gson.toJson(new TokenResponse(token));
+            return gson.toJson(new AuthResponse(body.username, token));
         });
 
         // User logout
@@ -65,9 +70,18 @@ public class Main {
             String authHeader = req.headers("Authorization");
             if (authHeader == null || !tokens.containsKey(authHeader)) {
                 res.status(401);
-                return gson.toJson(new ErrorResponse("Invalid or missing auth token"));
+                return gson.toJson(new ErrorResponse("Error: Invalid or missing auth token"));
             }
             tokens.remove(authHeader);
+            res.status(200);
+            return "{}";
+        });
+
+        delete("/db", (req, res) -> {
+            users.clear();
+            tokens.clear();
+            games.clear();
+            nextGameId.set(1);
             res.status(200);
             return "{}";
         });
@@ -81,14 +95,14 @@ public class Main {
             String username = tokens.get(authHeader);
             if (authHeader == null || username == null) {
                 res.status(401);
-                return gson.toJson(new ErrorResponse("Unauthorized"));
+                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
             }
 
-            //validate
+            // Validate
             GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
             if (gameReq == null || gameReq.gameName == null) {
                 res.status(400);
-                return gson.toJson(new ErrorResponse("Missing gameName"));
+                return gson.toJson(new ErrorResponse("Error: Missing gameName"));
             }
 
             // Create a new game
@@ -105,13 +119,13 @@ public class Main {
         String username;
         String password;
     }
-    static class UserResponse {
+    static class AuthResponse {
         String username;
-        UserResponse(String username) { this.username = username; }
-    }
-    static class TokenResponse {
         String authToken;
-        TokenResponse(String authToken) { this.authToken = authToken; }
+        AuthResponse(String username, String authToken) {
+            this.username = username;
+            this.authToken = authToken;
+        }
     }
     static class ErrorResponse {
         String message;
