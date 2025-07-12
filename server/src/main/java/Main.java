@@ -71,6 +71,34 @@ public class Main {
             res.status(200);
             return "{}";
         });
+
+        // Create game
+        post("/game", (req, res) -> {
+            res.type("application/json");
+
+            // Check Authorization
+            String authHeader = req.headers("Authorization");
+            String username = tokens.get(authHeader);
+            if (authHeader == null || username == null) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Unauthorized"));
+            }
+
+            //validate
+            GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
+            if (gameReq == null || gameReq.gameName == null) {
+                res.status(400);
+                return gson.toJson(new ErrorResponse("Missing gameName"));
+            }
+
+            // Create a new game
+            int gameID = nextGameId.getAndIncrement();
+            GameData game = new GameData(gameID, gameReq.gameName, username, null, "initial game state here");
+            games.put(gameID, game);
+
+            res.status(200);
+            return gson.toJson(game);
+        });
     }
 
     static class UserRequest {
