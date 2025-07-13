@@ -152,6 +152,28 @@ public class Server {
                 return gson.toJson(new ErrorResponse("Error: Invalid gameID"));
             }
 
+            if ("WHITE".equalsIgnoreCase(joinReq.playerColor)) {
+                games.put(joinReq.gameID, new GameData(
+                        game.gameID(),
+                        game.gameName(),
+                        auth.username(),
+                        game.blackUsername(),
+                        game.game()
+                ));
+            } else if ("BLACK".equalsIgnoreCase(joinReq.playerColor)) {
+                games.put(joinReq.gameID, new GameData(
+                        game.gameID(),
+                        game.gameName(),
+                        game.whiteUsername(),
+                        auth.username(),
+                        game.game()
+                ));
+            }
+            // observer
+            res.status(200);
+            return "{}";
+        });
+
         awaitInitialization();
         return port();
     }
@@ -171,4 +193,9 @@ public class Server {
         String message;
         ErrorResponse(String message) { this.message = message; }
     }
+    static class JoinRequest {
+        String playerColor;
+        Integer gameID;
+    }
+
 }
