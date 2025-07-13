@@ -134,6 +134,24 @@ public class Server {
             return gson.toJson(response);
         });
 
+        // Join game
+        put("/game", (req, res) -> {
+            res.type("application/json");
+            String authHeader = req.headers("Authorization");
+            AuthData auth = tokens.get(authHeader);
+            if (authHeader == null || auth == null) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+            }
+
+            JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
+
+            GameData game = games.get(joinReq.gameID);
+            if (game == null) {
+                res.status(400);
+                return gson.toJson(new ErrorResponse("Error: Invalid gameID"));
+            }
+
         awaitInitialization();
         return port();
     }
