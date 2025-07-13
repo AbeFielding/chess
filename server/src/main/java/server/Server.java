@@ -24,8 +24,8 @@ public class Server {
 
     public int run(int desiredPort) {
         port(desiredPort);
+        staticFiles.location("/web");
 
-        // Register
         delete("/db", (req, res) -> {
             users.clear();
             tokens.clear();
@@ -137,7 +137,6 @@ public class Server {
         awaitInitialization();
         return port();
     }
-
     static class RegisterRequest {
         String username;
         String password;
