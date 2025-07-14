@@ -110,7 +110,7 @@ public class Server {
             }
             int gameID = nextGameId.getAndIncrement();
             ChessGame chessGame = new ChessGame();
-            GameData game = new GameData(gameID, gameReq.gameName, auth.username(), null, chessGame);
+            GameData game = new GameData(gameID, gameReq.gameName, null, null, chessGame);
             games.put(gameID, game);
 
             res.status(200);
