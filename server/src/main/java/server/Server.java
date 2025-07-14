@@ -146,6 +146,19 @@ public class Server {
 
             JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
 
+            // Validate request
+            if (joinReq == null || joinReq.gameID == null) {
+                res.status(400);
+                return gson.toJson(new ErrorResponse("Error: Missing gameID"));
+            }
+            if (joinReq.playerColor != null &&
+                    !("WHITE".equalsIgnoreCase(joinReq.playerColor) ||
+                            "BLACK".equalsIgnoreCase(joinReq.playerColor) ||
+                            "OBSERVER".equalsIgnoreCase(joinReq.playerColor))) {
+                res.status(400);
+                return gson.toJson(new ErrorResponse("Error: Invalid color"));
+            }
+
             GameData game = games.get(joinReq.gameID);
             if (game == null) {
                 res.status(400);
@@ -153,6 +166,10 @@ public class Server {
             }
 
             if ("WHITE".equalsIgnoreCase(joinReq.playerColor)) {
+                if (game.whiteUsername() != null && !game.whiteUsername().equals(auth.username())) {
+                    res.status(403);
+                    return gson.toJson(new ErrorResponse("Error: Color already taken"));
+                }
                 games.put(joinReq.gameID, new GameData(
                         game.gameID(),
                         game.gameName(),
@@ -161,6 +178,10 @@ public class Server {
                         game.game()
                 ));
             } else if ("BLACK".equalsIgnoreCase(joinReq.playerColor)) {
+                if (game.blackUsername() != null && !game.blackUsername().equals(auth.username())) {
+                    res.status(403);
+                    return gson.toJson(new ErrorResponse("Error: Color already taken"));
+                }
                 games.put(joinReq.gameID, new GameData(
                         game.gameID(),
                         game.gameName(),
@@ -169,7 +190,7 @@ public class Server {
                         game.game()
                 ));
             }
-            // observer
+
             res.status(200);
             return "{}";
         });
