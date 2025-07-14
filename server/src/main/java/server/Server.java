@@ -146,15 +146,18 @@ public class Server {
 
             JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
 
-            // Validate request
+            // validate
             if (joinReq == null || joinReq.gameID == null) {
                 res.status(400);
                 return gson.toJson(new ErrorResponse("Error: Missing gameID"));
             }
-            if (joinReq.playerColor != null &&
-                    !("WHITE".equalsIgnoreCase(joinReq.playerColor) ||
-                            "BLACK".equalsIgnoreCase(joinReq.playerColor) ||
-                            "OBSERVER".equalsIgnoreCase(joinReq.playerColor))) {
+
+            if (joinReq.playerColor == null || joinReq.playerColor.isBlank()) {
+                res.status(400);
+                return gson.toJson(new ErrorResponse("Error: Missing playerColor"));
+            }
+            String color = joinReq.playerColor.trim().toUpperCase();
+            if (!color.equals("WHITE") && !color.equals("BLACK") && !color.equals("OBSERVER")) {
                 res.status(400);
                 return gson.toJson(new ErrorResponse("Error: Invalid color"));
             }
@@ -165,7 +168,7 @@ public class Server {
                 return gson.toJson(new ErrorResponse("Error: Invalid gameID"));
             }
 
-            if ("WHITE".equalsIgnoreCase(joinReq.playerColor)) {
+            if (color.equals("WHITE")) {
                 if (game.whiteUsername() != null && !game.whiteUsername().equals(auth.username())) {
                     res.status(403);
                     return gson.toJson(new ErrorResponse("Error: Color already taken"));
@@ -177,7 +180,7 @@ public class Server {
                         game.blackUsername(),
                         game.game()
                 ));
-            } else if ("BLACK".equalsIgnoreCase(joinReq.playerColor)) {
+            } else if (color.equals("BLACK")) {
                 if (game.blackUsername() != null && !game.blackUsername().equals(auth.username())) {
                     res.status(403);
                     return gson.toJson(new ErrorResponse("Error: Color already taken"));
@@ -218,5 +221,4 @@ public class Server {
         String playerColor;
         Integer gameID;
     }
-
 }
