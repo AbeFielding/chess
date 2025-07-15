@@ -78,7 +78,9 @@ public class ChessPiece {
             for (int step = 1; step <= maxSteps; step++) {
                 r += dir[0];
                 c += dir[1];
-                if (r < 1 || r > 8 || c < 1 || c > 8) break;
+                if (r < 1 || r > 8 || c < 1 || c > 8) {
+                    break;
+                }
                 ChessPosition newPos = new ChessPosition(r, c);
                 ChessPiece pieceAtNewPos = board.getPiece(newPos);
                 if (pieceAtNewPos == null) {
