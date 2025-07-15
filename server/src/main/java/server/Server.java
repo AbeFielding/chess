@@ -60,9 +60,13 @@ public class Server {
                 return gson.toJson(auth);
             } catch (Exception e) {
                 String msg = e.getMessage();
-                if ("Username already taken".equals(msg)) res.status(403);
-                else if ("Missing fields".equals(msg)) res.status(400);
-                else res.status(500);
+                if ("Username already taken".equals(msg)) {
+                    res.status(403);
+                } else if ("Missing fields".equals(msg)) {
+                    res.status(400);
+                } else {
+                    res.status(500);
+                }
                 return gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
@@ -76,9 +80,13 @@ public class Server {
                 return gson.toJson(auth);
             } catch (Exception e) {
                 String msg = e.getMessage();
-                if ("Missing fields".equals(msg)) res.status(400);
-                else if ("Invalid username or password".equals(msg)) res.status(401);
-                else res.status(500);
+                if ("Missing fields".equals(msg)) {
+                    res.status(400);
+                } else if ("Invalid username or password".equals(msg)) {
+                    res.status(401);
+                } else {
+                    res.status(500);
+                }
                 return gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
