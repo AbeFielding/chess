@@ -145,33 +145,35 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        ChessPosition kingPosition = null;
+        ChessPosition kingPosition = findKing(teamColor);
+        if (kingPosition == null) {
+            return false;
+        }
+        return isSquareAttacked(kingPosition, getOpponent(teamColor));
+    }
 
-
+    private ChessPosition findKing(TeamColor teamColor) {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(pos);
                 if (piece != null && piece.getTeamColor() == teamColor && piece.getPieceType() == ChessPiece.PieceType.KING) {
-                    kingPosition = pos;
-                    break;
+                    return pos;
                 }
             }
         }
+        return null;
+    }
 
-        if (kingPosition == null) {
-            return false;
-        }
-
-        TeamColor opponentColor = (teamColor == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
+    private boolean isSquareAttacked(ChessPosition position, TeamColor byColor) {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition pos = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(pos);
-                if (piece != null && piece.getTeamColor() == opponentColor) {
+                if (piece != null && piece.getTeamColor() == byColor) {
                     Collection<ChessMove> moves = piece.pieceMoves(board, pos);
                     for (ChessMove move : moves) {
-                        if (move.getEndPosition().equals(kingPosition)) {
+                        if (move.getEndPosition().equals(position)) {
                             return true;
                         }
                     }
@@ -179,6 +181,10 @@ public class ChessGame {
             }
         }
         return false;
+    }
+
+    private TeamColor getOpponent(TeamColor color) {
+        return (color == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
     }
 
     /**
