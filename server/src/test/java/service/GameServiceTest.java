@@ -1,4 +1,4 @@
-package server.service;
+package service;
 
 import model.GameData;
 import chess.ChessGame;
@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import server.service.GameService;
 
 class GameServiceTest {
 
