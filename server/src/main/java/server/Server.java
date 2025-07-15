@@ -7,6 +7,7 @@ import model.GameData;
 import model.AuthData;
 import chess.ChessGame;
 import server.service.PlayerService;
+import server.service.GameService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,8 +19,8 @@ public class Server {
     static AtomicInteger nextGameId = new AtomicInteger(1);
     static Gson gson = new Gson();
 
-    // Add your PlayerService instance
     PlayerService playerService = new PlayerService(users, tokens);
+    GameService gameService = new GameService(games, nextGameId);
 
     public void stop() {
         spark.Spark.stop();
@@ -82,7 +83,7 @@ public class Server {
                 return gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
-
+        // User logout
         delete("/session", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -94,7 +95,7 @@ public class Server {
             res.status(200);
             return "{}";
         });
-
+        // Create game
         post("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -104,19 +105,16 @@ public class Server {
                 return gson.toJson(new ErrorResponse("Error: Unauthorized"));
             }
             GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
-            if (gameReq == null || gameReq.gameName == null) {
+            try {
+                GameData game = gameService.createGame(gameReq.gameName);
+                res.status(200);
+                return gson.toJson(game);
+            } catch (Exception e) {
                 res.status(400);
-                return gson.toJson(new ErrorResponse("Error: Missing gameName"));
+                return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
             }
-            int gameID = nextGameId.getAndIncrement();
-            ChessGame chessGame = new ChessGame();
-            GameData game = new GameData(gameID, gameReq.gameName, null, null, chessGame);
-            games.put(gameID, game);
-
-            res.status(200);
-            return gson.toJson(game);
         });
-
+        // List games
         get("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -125,14 +123,14 @@ public class Server {
                 res.status(401);
                 return gson.toJson(new ErrorResponse("Error: Unauthorized"));
             }
-            List<GameData> allGames = new ArrayList<>(games.values());
+            List<GameData> allGames = gameService.listGames();
             Map<String, Object> response = new HashMap<>();
             response.put("games", allGames);
 
             res.status(200);
             return gson.toJson(response);
         });
-
+        // Join game
         put("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -144,55 +142,22 @@ public class Server {
 
             JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
 
-            if (joinReq == null || joinReq.gameID == null) {
-                res.status(400);
-                return gson.toJson(new ErrorResponse("Error: Missing gameID"));
-            }
-
-            if (joinReq.playerColor == null || joinReq.playerColor.isBlank()) {
-                res.status(400);
-                return gson.toJson(new ErrorResponse("Error: Missing playerColor"));
-            }
-            String color = joinReq.playerColor.trim().toUpperCase();
-            if (!color.equals("WHITE") && !color.equals("BLACK") && !color.equals("OBSERVER")) {
-                res.status(400);
-                return gson.toJson(new ErrorResponse("Error: Invalid color"));
-            }
-
-            GameData game = games.get(joinReq.gameID);
-            if (game == null) {
-                res.status(400);
-                return gson.toJson(new ErrorResponse("Error: Invalid gameID"));
-            }
-
-            if (color.equals("WHITE")) {
-                if (game.whiteUsername() != null && !game.whiteUsername().equals(auth.username())) {
+            try {
+                gameService.joinGame(joinReq.gameID, joinReq.playerColor, auth.username());
+                res.status(200);
+                return "{}";
+            } catch (Exception e) {
+                String msg = e.getMessage();
+                // Error status based on exception message
+                if ("Missing gameID".equals(msg) || "Missing playerColor".equals(msg) || "Invalid gameID".equals(msg) || "Invalid color".equals(msg)) {
+                    res.status(400);
+                } else if ("Color already taken".equals(msg)) {
                     res.status(403);
-                    return gson.toJson(new ErrorResponse("Error: Color already taken"));
+                } else {
+                    res.status(500);
                 }
-                games.put(joinReq.gameID, new GameData(
-                        game.gameID(),
-                        game.gameName(),
-                        auth.username(),
-                        game.blackUsername(),
-                        game.game()
-                ));
-            } else if (color.equals("BLACK")) {
-                if (game.blackUsername() != null && !game.blackUsername().equals(auth.username())) {
-                    res.status(403);
-                    return gson.toJson(new ErrorResponse("Error: Color already taken"));
-                }
-                games.put(joinReq.gameID, new GameData(
-                        game.gameID(),
-                        game.gameName(),
-                        game.whiteUsername(),
-                        auth.username(),
-                        game.game()
-                ));
+                return gson.toJson(new ErrorResponse("Error: " + msg));
             }
-
-            res.status(200);
-            return "{}";
         });
 
         awaitInitialization();
