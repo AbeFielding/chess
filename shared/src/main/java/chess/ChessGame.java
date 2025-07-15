@@ -171,13 +171,20 @@ public class ChessGame {
                 ChessPosition pos = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(pos);
                 if (piece != null && piece.getTeamColor() == byColor) {
-                    Collection<ChessMove> moves = piece.pieceMoves(board, pos);
-                    for (ChessMove move : moves) {
-                        if (move.getEndPosition().equals(position)) {
-                            return true;
-                        }
+                    if (pieceAttacksPosition(piece, pos, position)) {
+                        return true;
                     }
                 }
+            }
+        }
+        return false;
+    }
+
+    private boolean pieceAttacksPosition(ChessPiece piece, ChessPosition from, ChessPosition target) {
+        Collection<ChessMove> moves = piece.pieceMoves(board, from);
+        for (ChessMove move : moves) {
+            if (move.getEndPosition().equals(target)) {
+                return true;
             }
         }
         return false;

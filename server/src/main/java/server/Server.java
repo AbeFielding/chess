@@ -31,6 +31,15 @@ public class Server {
         port(desiredPort);
         staticFiles.location("/web");
 
+        registerDbEndpoint();
+        registerUserEndpoints();
+        registerGameEndpoints();
+
+        awaitInitialization();
+        return port();
+    }
+
+    private void registerDbEndpoint() {
         delete("/db", (req, res) -> {
             users.clear();
             tokens.clear();
@@ -39,51 +48,41 @@ public class Server {
             res.status(200);
             return "{}";
         });
+    }
 
-        // User registration
+    private void registerUserEndpoints() {
         post("/user", (req, res) -> {
             res.type("application/json");
             RegisterRequest body = gson.fromJson(req.body(), RegisterRequest.class);
-
             try {
                 AuthData auth = playerService.register(body.username, body.password, body.email);
                 res.status(200);
                 return gson.toJson(auth);
             } catch (Exception e) {
                 String msg = e.getMessage();
-                if ("Username already taken".equals(msg)) {
-                    res.status(403);
-                } else if ("Missing fields".equals(msg)) {
-                    res.status(400);
-                } else {
-                    res.status(500);
-                }
+                if ("Username already taken".equals(msg)) res.status(403);
+                else if ("Missing fields".equals(msg)) res.status(400);
+                else res.status(500);
                 return gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
 
-        // User login
         post("/session", (req, res) -> {
             res.type("application/json");
             LoginRequest body = gson.fromJson(req.body(), LoginRequest.class);
-
             try {
                 AuthData auth = playerService.login(body.username, body.password);
                 res.status(200);
                 return gson.toJson(auth);
             } catch (Exception e) {
                 String msg = e.getMessage();
-                if ("Missing fields".equals(msg)) {
-                    res.status(400);
-                } else if ("Invalid username or password".equals(msg)) {
-                    res.status(401);
-                } else {
-                    res.status(500);
-                }
+                if ("Missing fields".equals(msg)) res.status(400);
+                else if ("Invalid username or password".equals(msg)) res.status(401);
+                else res.status(500);
                 return gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
-        // User logout
+
         delete("/session", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -95,7 +94,9 @@ public class Server {
             res.status(200);
             return "{}";
         });
-        // Create game
+    }
+
+    private void registerGameEndpoints() {
         post("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -114,7 +115,7 @@ public class Server {
                 return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
             }
         });
-        // List games
+
         get("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -130,7 +131,7 @@ public class Server {
             res.status(200);
             return gson.toJson(response);
         });
-        // Join game
+
         put("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -139,17 +140,15 @@ public class Server {
                 res.status(401);
                 return gson.toJson(new ErrorResponse("Error: Unauthorized"));
             }
-
             JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
-
             try {
                 gameService.joinGame(joinReq.gameID, joinReq.playerColor, auth.username());
                 res.status(200);
                 return "{}";
             } catch (Exception e) {
                 String msg = e.getMessage();
-                // Error status based on exception message
-                if ("Missing gameID".equals(msg) || "Missing playerColor".equals(msg) || "Invalid gameID".equals(msg) || "Invalid color".equals(msg)) {
+                if ("Missing gameID".equals(msg) || "Missing playerColor".equals(msg) ||
+                        "Invalid gameID".equals(msg) || "Invalid color".equals(msg)) {
                     res.status(400);
                 } else if ("Color already taken".equals(msg)) {
                     res.status(403);
@@ -159,9 +158,6 @@ public class Server {
                 return gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
-
-        awaitInitialization();
-        return port();
     }
     static class RegisterRequest {
         String username;
