@@ -6,6 +6,7 @@ import model.UserData;
 import model.GameData;
 import model.AuthData;
 import chess.ChessGame;
+import server.service.PlayerService;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,6 +17,9 @@ public class Server {
     static ConcurrentHashMap<Integer, GameData> games = new ConcurrentHashMap<>();
     static AtomicInteger nextGameId = new AtomicInteger(1);
     static Gson gson = new Gson();
+
+    // Add your PlayerService instance
+    PlayerService playerService = new PlayerService(users, tokens);
 
     public void stop() {
         spark.Spark.stop();
@@ -40,23 +44,21 @@ public class Server {
             res.type("application/json");
             RegisterRequest body = gson.fromJson(req.body(), RegisterRequest.class);
 
-            if (body == null || body.username == null || body.password == null || body.email == null) {
-                res.status(400);
-                return gson.toJson(new ErrorResponse("Error: Missing username or password or email"));
+            try {
+                AuthData auth = playerService.register(body.username, body.password, body.email);
+                res.status(200);
+                return gson.toJson(auth);
+            } catch (Exception e) {
+                String msg = e.getMessage();
+                if ("Username already taken".equals(msg)) {
+                    res.status(403);
+                } else if ("Missing fields".equals(msg)) {
+                    res.status(400);
+                } else {
+                    res.status(500);
+                }
+                return gson.toJson(new ErrorResponse("Error: " + msg));
             }
-            if (users.containsKey(body.username)) {
-                res.status(403);
-                return gson.toJson(new ErrorResponse("Error: Username already taken"));
-            }
-            UserData newUser = new UserData(body.username, body.password, body.email);
-            users.put(body.username, newUser);
-
-            String token = UUID.randomUUID().toString();
-            AuthData auth = new AuthData(token, body.username);
-            tokens.put(token, auth);
-
-            res.status(200);
-            return gson.toJson(auth);
         });
 
         // User login
@@ -64,24 +66,23 @@ public class Server {
             res.type("application/json");
             LoginRequest body = gson.fromJson(req.body(), LoginRequest.class);
 
-            if (body == null || body.username == null || body.password == null) {
-                res.status(400);
-                return gson.toJson(new ErrorResponse("Error: Missing username or password"));
+            try {
+                AuthData auth = playerService.login(body.username, body.password);
+                res.status(200);
+                return gson.toJson(auth);
+            } catch (Exception e) {
+                String msg = e.getMessage();
+                if ("Missing fields".equals(msg)) {
+                    res.status(400);
+                } else if ("Invalid username or password".equals(msg)) {
+                    res.status(401);
+                } else {
+                    res.status(500);
+                }
+                return gson.toJson(new ErrorResponse("Error: " + msg));
             }
-            UserData user = users.get(body.username);
-            if (user == null || !user.password().equals(body.password)) {
-                res.status(401);
-                return gson.toJson(new ErrorResponse("Error: Invalid username or password"));
-            }
-            String token = UUID.randomUUID().toString();
-            AuthData auth = new AuthData(token, body.username);
-            tokens.put(token, auth);
-
-            res.status(200);
-            return gson.toJson(auth);
         });
 
-        // User logout
         delete("/session", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -94,7 +95,6 @@ public class Server {
             return "{}";
         });
 
-        // Create game
         post("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -117,7 +117,6 @@ public class Server {
             return gson.toJson(game);
         });
 
-        // List games
         get("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -134,7 +133,6 @@ public class Server {
             return gson.toJson(response);
         });
 
-        // Join game
         put("/game", (req, res) -> {
             res.type("application/json");
             String authHeader = req.headers("Authorization");
@@ -146,7 +144,6 @@ public class Server {
 
             JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
 
-            // validate
             if (joinReq == null || joinReq.gameID == null) {
                 res.status(400);
                 return gson.toJson(new ErrorResponse("Error: Missing gameID"));
