@@ -4,13 +4,13 @@ import model.GameData;
 import chess.ChessGame;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import server.service.GameService;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
-import server.service.GameService;
 
 class GameServiceTest {
 
@@ -21,9 +21,8 @@ class GameServiceTest {
         gameService = new GameService(new ConcurrentHashMap<>(), new AtomicInteger(1));
     }
 
-
     @Test
-    void createGamePositive() throws Exception {
+    void createGameSucceeds() throws Exception {
         GameData game = gameService.createGame("Test Game");
         assertNotNull(game);
         assertEquals("Test Game", game.gameName());
@@ -34,14 +33,13 @@ class GameServiceTest {
     }
 
     @Test
-    void createGameNegative_nullName() {
+    void createGameThrowsWhenNameIsNull() {
         Exception e = assertThrows(Exception.class, () -> gameService.createGame(null));
         assertTrue(e.getMessage().contains("Missing"));
     }
 
-
     @Test
-    void listGamesPositive() throws Exception {
+    void listGamesReturnsAllGames() throws Exception {
         gameService.createGame("G1");
         gameService.createGame("G2");
         List<GameData> games = gameService.listGames();
@@ -51,7 +49,7 @@ class GameServiceTest {
     }
 
     @Test
-    void joinGamePositive_white() throws Exception {
+    void joinGameAsWhite() throws Exception {
         GameData game = gameService.createGame("My Game");
         gameService.joinGame(game.gameID(), "WHITE", "alice");
         GameData updated = gameService.listGames().get(0);
@@ -60,7 +58,7 @@ class GameServiceTest {
     }
 
     @Test
-    void joinGamePositive_black() throws Exception {
+    void joinGameAsBlack() throws Exception {
         GameData game = gameService.createGame("My Game");
         gameService.joinGame(game.gameID(), "BLACK", "bob");
         GameData updated = gameService.listGames().get(0);
@@ -69,46 +67,41 @@ class GameServiceTest {
     }
 
     @Test
-    void joinGameNegative_alreadyTaken() throws Exception {
+    void joinGameThrowsWhenColorIsTaken() throws Exception {
         GameData game = gameService.createGame("My Game");
         gameService.joinGame(game.gameID(), "WHITE", "alice");
-        Exception e = assertThrows(Exception.class, () ->
-                gameService.joinGame(game.gameID(), "WHITE", "bob"));
+        Exception e = assertThrows(Exception.class, () -> gameService.joinGame(game.gameID(), "WHITE", "bob"));
         assertTrue(e.getMessage().contains("Color already taken"));
     }
 
     @Test
-    void joinGameNegative_missingGameID() {
-        Exception e = assertThrows(Exception.class, () ->
-                gameService.joinGame(null, "WHITE", "alice"));
+    void joinGameThrowsWhenGameIdMissing() {
+        Exception e = assertThrows(Exception.class, () -> gameService.joinGame(null, "WHITE", "alice"));
         assertTrue(e.getMessage().contains("Missing"));
     }
 
     @Test
-    void joinGameNegative_missingColor() throws Exception {
+    void joinGameThrowsWhenColorMissing() throws Exception {
         GameData game = gameService.createGame("Test");
-        Exception e = assertThrows(Exception.class, () ->
-                gameService.joinGame(game.gameID(), null, "alice"));
+        Exception e = assertThrows(Exception.class, () -> gameService.joinGame(game.gameID(), null, "alice"));
         assertTrue(e.getMessage().contains("Missing"));
     }
 
     @Test
-    void joinGameNegative_invalidColor() throws Exception {
+    void joinGameThrowsOnInvalidColor() throws Exception {
         GameData game = gameService.createGame("Test");
-        Exception e = assertThrows(Exception.class, () ->
-                gameService.joinGame(game.gameID(), "GREEN", "alice"));
+        Exception e = assertThrows(Exception.class, () -> gameService.joinGame(game.gameID(), "GREEN", "alice"));
         assertTrue(e.getMessage().contains("Invalid color"));
     }
 
     @Test
-    void joinGameNegative_badGameID() {
-        Exception e = assertThrows(Exception.class, () ->
-                gameService.joinGame(999, "WHITE", "alice"));
+    void joinGameThrowsOnBadGameId() {
+        Exception e = assertThrows(Exception.class, () -> gameService.joinGame(999, "WHITE", "alice"));
         assertTrue(e.getMessage().contains("Invalid gameID"));
     }
 
     @Test
-    void joinGamePositive_observer() throws Exception {
+    void joinGameAsObserverDoesNotAssign() throws Exception {
         GameData game = gameService.createGame("Observe Me");
         // Should not throw and should not assign a username
         gameService.joinGame(game.gameID(), "OBSERVER", "anon");

@@ -26,7 +26,7 @@ class PlayerServiceTest {
     }
 
     @Test
-    void registerNegative_duplicateUsername() throws Exception {
+    void registerNegativeDuplicateUsername() throws Exception {
         playerService.register("bob", "pw", "bob@mail.com");
         Exception e = assertThrows(Exception.class, () ->
                 playerService.register("bob", "pw2", "bob2@mail.com"));
@@ -34,7 +34,7 @@ class PlayerServiceTest {
     }
 
     @Test
-    void registerNegative_missingFields() {
+    void registerNegativeMissingFields() {
         Exception e = assertThrows(Exception.class, () ->
                 playerService.register(null, "pw", "bob@mail.com"));
         assertTrue(e.getMessage().contains("Missing"));
@@ -57,7 +57,7 @@ class PlayerServiceTest {
     }
 
     @Test
-    void loginNegative_wrongPassword() throws Exception {
+    void loginNegativeWrongPassword() throws Exception {
         playerService.register("alice", "pw", "alice@mail.com");
         Exception e = assertThrows(Exception.class, () ->
                 playerService.login("alice", "wrongpw"));
@@ -65,14 +65,14 @@ class PlayerServiceTest {
     }
 
     @Test
-    void loginNegative_nonexistentUser() {
+    void loginNegativeNonexistentUser() {
         Exception e = assertThrows(Exception.class, () ->
                 playerService.login("nosuchuser", "pw"));
         assertTrue(e.getMessage().contains("Invalid"));
     }
 
     @Test
-    void loginNegative_missingFields() {
+    void loginNegativeMissingFields() {
         Exception e = assertThrows(Exception.class, () ->
                 playerService.login(null, "pw"));
         assertTrue(e.getMessage().contains("Missing"));
