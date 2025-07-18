@@ -25,6 +25,28 @@ public class DatabaseManager {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
+        """,
+            """
+        CREATE TABLE IF NOT EXISTS games (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            white_user_id INT,
+            black_user_id INT,
+            state TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            finished BOOLEAN DEFAULT FALSE,
+            FOREIGN KEY (white_user_id) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY (black_user_id) REFERENCES users(id) ON DELETE SET NULL
+        )
+        """,
+            """
+        CREATE TABLE IF NOT EXISTS moves (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            game_id INT NOT NULL,
+            move_number INT NOT NULL,
+            move VARCHAR(16) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+        )
         """
     };
 
