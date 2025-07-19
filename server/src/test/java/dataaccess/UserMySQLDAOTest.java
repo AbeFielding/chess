@@ -12,6 +12,11 @@ public class UserMySQLDAOTest {
     public void setUp() throws DataAccessException {
         DatabaseManager.initializeTables();
         userDAO = new UserMySQLDAO();
+        try (var conn = DatabaseManager.getConnection();
+             var stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM users");
+        } catch (Exception e) {
+        }
     }
 
     @Test
@@ -25,6 +30,19 @@ public class UserMySQLDAOTest {
         assertNotNull(retrieved);
         assertEquals(username, retrieved.getUsername());
         assertEquals(hash, retrieved.getPasswordHash());
+    }
+
+    @Test
+    public void insertDuplicateUserFails() throws DataAccessException {
+        String username = "testuser2";
+        String hash = "hashedPassword";
+        User user1 = new User(username, hash);
+        User user2 = new User(username, hash + "X");
+
+        userDAO.insertUser(user1);
+        assertThrows(DataAccessException.class, () -> {
+            userDAO.insertUser(user2);
+        });
     }
 }
 
