@@ -27,7 +27,7 @@ public class AuthTokenMySQLDAOTest {
     }
 
     @Test
-    public void insertAndRetrieveToken_Positive() throws DataAccessException {
+    public void insertTokenPositive() throws DataAccessException {
         AuthToken token = new AuthToken("token123", userId);
         dao.insertToken(token);
 
@@ -37,13 +37,21 @@ public class AuthTokenMySQLDAOTest {
     }
 
     @Test
-    public void retrieveMissingToken_Negative() throws DataAccessException {
-        AuthToken found = dao.getToken("doesnotexist");
+    public void insertTokenNegativeDuplicate() throws DataAccessException {
+        AuthToken token1 = new AuthToken("dupToken", userId);
+        AuthToken token2 = new AuthToken("dupToken", userId);
+        dao.insertToken(token1);
+        assertThrows(DataAccessException.class, () -> dao.insertToken(token2));
+    }
+
+    @Test
+    public void getTokenNegativeNotFound() throws DataAccessException {
+        AuthToken found = dao.getToken("does not exist");
         assertNull(found);
     }
 
     @Test
-    public void deleteToken_Positive() throws DataAccessException {
+    public void deleteTokenPositive() throws DataAccessException {
         AuthToken token = new AuthToken("tokenDelete", userId);
         dao.insertToken(token);
 
@@ -53,8 +61,7 @@ public class AuthTokenMySQLDAOTest {
     }
 
     @Test
-    public void deleteToken_Negative() throws DataAccessException {
-        // Deleting a token that doesn't exist should not throw, but remain null
+    public void deleteTokenNegativeNotFound() throws DataAccessException {
         dao.deleteToken("not_present_token");
         AuthToken found = dao.getToken("not_present_token");
         assertNull(found);

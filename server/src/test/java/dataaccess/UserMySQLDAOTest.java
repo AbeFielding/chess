@@ -15,47 +15,55 @@ public class UserMySQLDAOTest {
         try (var conn = DatabaseManager.getConnection();
              var stmt = conn.createStatement()) {
             stmt.executeUpdate("DELETE FROM users");
-        } catch (Exception e) {
-        }
+        } catch (Exception e) {}
     }
 
     @Test
-    public void insertAndRetrieveUser_Positive() throws DataAccessException {
-        String username = "testuser";
-        String hash = "hashedPassword";
-        User user = new User(username, hash);
+    public void insertUserPositive() throws DataAccessException {
+        User user = new User("insertuser", "hash1");
         userDAO.insertUser(user);
-
-        User retrieved = userDAO.getUserByUsername(username);
-        assertNotNull(retrieved);
-        assertEquals(username, retrieved.getUsername());
-        assertEquals(hash, retrieved.getPasswordHash());
-
-        User byId = userDAO.getUserById(retrieved.getId());
-        assertNotNull(byId);
-        assertEquals(username, byId.getUsername());
+        User found = userDAO.getUserByUsername("insertuser");
+        assertNotNull(found);
+        assertEquals("insertuser", found.getUsername());
     }
 
     @Test
-    public void insertDuplicateUser_Negative() throws DataAccessException {
-        String username = "testuser2";
-        String hash = "hashedPassword";
-        User user1 = new User(username, hash);
-        User user2 = new User(username, hash + "X");
-
-        userDAO.insertUser(user1);
-        assertThrows(DataAccessException.class, () -> userDAO.insertUser(user2));
+    public void insertUserNegativeDuplicate() throws DataAccessException {
+        User user = new User("dupeuser", "hash1");
+        userDAO.insertUser(user);
+        User dupe = new User("dupeuser", "hash2");
+        assertThrows(DataAccessException.class, () -> userDAO.insertUser(dupe));
     }
 
     @Test
-    public void getUserByUsername_Negative() throws DataAccessException {
-        User retrieved = userDAO.getUserByUsername("no_such_user");
-        assertNull(retrieved);
+    public void getUserByUsernamePositive() throws DataAccessException {
+        User user = new User("userbyusername", "hash3");
+        userDAO.insertUser(user);
+        User found = userDAO.getUserByUsername("userbyusername");
+        assertNotNull(found);
+        assertEquals("userbyusername", found.getUsername());
     }
 
     @Test
-    public void getUserById_Negative() throws DataAccessException {
-        User retrieved = userDAO.getUserById(-12345);
-        assertNull(retrieved);
+    public void getUserByUsernameNegative() throws DataAccessException {
+        User found = userDAO.getUserByUsername("notthere");
+        assertNull(found);
+    }
+
+    @Test
+    public void getUserByIdPositive() throws DataAccessException {
+        User user = new User("userbyid", "hash4");
+        userDAO.insertUser(user);
+        User foundByUsername = userDAO.getUserByUsername("userbyid");
+        assertNotNull(foundByUsername);
+        User foundById = userDAO.getUserById(foundByUsername.getId());
+        assertNotNull(foundById);
+        assertEquals("userbyid", foundById.getUsername());
+    }
+
+    @Test
+    public void getUserByIdNegative() throws DataAccessException {
+        User found = userDAO.getUserById(-10000);
+        assertNull(found);
     }
 }
