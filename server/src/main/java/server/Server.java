@@ -27,6 +27,12 @@ public class Server {
         port(desiredPort);
         staticFiles.location("/web");
 
+        exception(Exception.class, (ex, req, res) -> {
+            res.type("application/json");
+            res.status(500);
+            res.body(gson.toJson(new ErrorResponse("Error: " + ex.getMessage())));
+        });
+
         registerDbEndpoint();
         registerUserEndpoints();
         registerGameEndpoints();
@@ -115,21 +121,26 @@ public class Server {
     private void registerGameEndpoints() {
         post("/game", (req, res) -> {
             res.type("application/json");
+            String authHeader = req.headers("Authorization");
+            var token = authTokenDAO.getToken(authHeader);
+            if (authHeader == null || token == null) {
+                res.status(401);
+                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+            }
+            GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
             try {
-                String authHeader = req.headers("Authorization");
-                var token = authTokenDAO.getToken(authHeader);
-                if (authHeader == null || token == null) {
-                    res.status(401);
-                    return gson.toJson(new ErrorResponse("Error: Unauthorized"));
-                }
-                GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
                 String username = userDAO.getUserById(token.getUserId()).getUsername();
                 GameData game = gameService.createGame(gameReq.gameName);
                 res.status(200);
                 return gson.toJson(game);
             } catch (Exception e) {
-                res.status(500);
-                return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
+                String msg = e.getMessage();
+                if ("Missing gameName".equals(msg)) {
+                    res.status(400);
+                } else {
+                    res.status(500);
+                }
+                return gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
 
