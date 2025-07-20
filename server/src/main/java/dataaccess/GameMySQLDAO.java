@@ -86,7 +86,10 @@ public class GameMySQLDAO implements GameDAO {
             ps.setString(1, state);
             ps.setBoolean(2, finished);
             ps.setInt(3, gameId);
-            ps.executeUpdate();
+            int updated = ps.executeUpdate();
+            if (updated == 0) {
+                throw new DataAccessException("Game not found for update");
+            }
         } catch (SQLException ex) {
             throw new DataAccessException("Unable to update game state", ex);
         }

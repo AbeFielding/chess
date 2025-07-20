@@ -11,7 +11,7 @@ import dataaccess.*;
 import java.util.*;
 
 public class Server {
-    private static final Gson gson = new Gson();
+    private static final Gson Gson = new Gson();
     private final UserDAO userDAO = new UserMySQLDAO();
     private final AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
     private final GameDAO gameDAO = new GameMySQLDAO();
@@ -37,7 +37,7 @@ public class Server {
         exception(Exception.class, (ex, req, res) -> {
             res.type("application/json");
             res.status(500);
-            res.body(gson.toJson(new ErrorResponse("Error: " + ex.getMessage())));
+            res.body(Gson.toJson(new ErrorResponse("Error: " + ex.getMessage())));
         });
 
         registerDbEndpoint();
@@ -61,7 +61,7 @@ public class Server {
                 }
             } catch (Exception ex) {
                 res.status(500);
-                return gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
+                return Gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
             }
         });
     }
@@ -69,11 +69,11 @@ public class Server {
     private void registerUserEndpoints() {
         post("/user", (req, res) -> {
             res.type("application/json");
-            RegisterRequest body = gson.fromJson(req.body(), RegisterRequest.class);
+            RegisterRequest body = Gson.fromJson(req.body(), RegisterRequest.class);
             try {
                 AuthData auth = playerService.register(body.username, body.password, body.email);
                 res.status(200);
-                return gson.toJson(auth);
+                return Gson.toJson(auth);
             } catch (Exception e) {
                 String msg = e.getMessage();
                 if ("Username already taken".equals(msg)) {
@@ -83,17 +83,17 @@ public class Server {
                 } else {
                     res.status(500);
                 }
-                return gson.toJson(new ErrorResponse("Error: " + msg));
+                return Gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
 
         post("/session", (req, res) -> {
             res.type("application/json");
-            LoginRequest body = gson.fromJson(req.body(), LoginRequest.class);
+            LoginRequest body = Gson.fromJson(req.body(), LoginRequest.class);
             try {
                 AuthData auth = playerService.login(body.username, body.password);
                 res.status(200);
-                return gson.toJson(auth);
+                return Gson.toJson(auth);
             } catch (Exception e) {
                 String msg = e.getMessage();
                 if ("Missing fields".equals(msg)) {
@@ -103,7 +103,7 @@ public class Server {
                 } else {
                     res.status(500);
                 }
-                return gson.toJson(new ErrorResponse("Error: " + msg));
+                return Gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
 
@@ -113,14 +113,14 @@ public class Server {
                 String authHeader = req.headers("Authorization");
                 if (authHeader == null || authTokenDAO.getToken(authHeader) == null) {
                     res.status(401);
-                    return gson.toJson(new ErrorResponse("Error: Invalid or missing auth token"));
+                    return Gson.toJson(new ErrorResponse("Error: Invalid or missing auth token"));
                 }
                 authTokenDAO.deleteToken(authHeader);
                 res.status(200);
                 return "{}";
             } catch (Exception ex) {
                 res.status(500);
-                return gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
+                return Gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
             }
         });
     }
@@ -132,14 +132,14 @@ public class Server {
             var token = authTokenDAO.getToken(authHeader);
             if (authHeader == null || token == null) {
                 res.status(401);
-                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+                return Gson.toJson(new ErrorResponse("Error: Unauthorized"));
             }
-            GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
+            GameRequest gameReq = Gson.fromJson(req.body(), GameRequest.class);
             try {
                 String username = userDAO.getUserById(token.getUserId()).getUsername();
                 GameData game = gameService.createGame(gameReq.gameName);
                 res.status(200);
-                return gson.toJson(game);
+                return Gson.toJson(game);
             } catch (Exception e) {
                 String msg = e.getMessage();
                 if ("Missing gameName".equals(msg)) {
@@ -147,7 +147,7 @@ public class Server {
                 } else {
                     res.status(500);
                 }
-                return gson.toJson(new ErrorResponse("Error: " + msg));
+                return Gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
 
@@ -158,17 +158,17 @@ public class Server {
                 var token = authTokenDAO.getToken(authHeader);
                 if (authHeader == null || token == null) {
                     res.status(401);
-                    return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+                    return Gson.toJson(new ErrorResponse("Error: Unauthorized"));
                 }
                 List<GameData> allGames = gameService.listGames();
                 Map<String, Object> response = new HashMap<>();
                 response.put("games", allGames);
 
                 res.status(200);
-                return gson.toJson(response);
+                return Gson.toJson(response);
             } catch (Exception ex) {
                 res.status(500);
-                return gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
+                return Gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
             }
         });
 
@@ -179,9 +179,9 @@ public class Server {
                 var token = authTokenDAO.getToken(authHeader);
                 if (authHeader == null || token == null) {
                     res.status(401);
-                    return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+                    return Gson.toJson(new ErrorResponse("Error: Unauthorized"));
                 }
-                JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
+                JoinRequest joinReq = Gson.fromJson(req.body(), JoinRequest.class);
                 String username = userDAO.getUserById(token.getUserId()).getUsername();
                 gameService.joinGame(joinReq.gameID, joinReq.playerColor, username);
                 res.status(200);
@@ -196,7 +196,7 @@ public class Server {
                 } else {
                     res.status(500);
                 }
-                return gson.toJson(new ErrorResponse("Error: " + msg));
+                return Gson.toJson(new ErrorResponse("Error: " + msg));
             }
         });
     }
