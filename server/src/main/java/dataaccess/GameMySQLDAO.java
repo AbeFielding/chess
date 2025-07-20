@@ -14,17 +14,24 @@ public class GameMySQLDAO implements GameDAO {
              var ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, game.getState());
             ps.setBoolean(2, game.isFinished());
-            if (game.getWhiteUserId() != null) ps.setInt(3, game.getWhiteUserId());
-            else ps.setNull(3, java.sql.Types.INTEGER);
-            if (game.getBlackUserId() != null) ps.setInt(4, game.getBlackUserId());
-            else ps.setNull(4, java.sql.Types.INTEGER);
+            if (game.getWhiteUserId() != null) {
+                ps.setInt(3, game.getWhiteUserId());
+            } else {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            }
+            if (game.getBlackUserId() != null) {
+                ps.setInt(4, game.getBlackUserId());
+            } else {
+                ps.setNull(4, java.sql.Types.INTEGER);
+            }
             ps.setString(5, game.getGameName());
             ps.executeUpdate();
             try (var rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
                     return rs.getInt(1);
+                } else {
+                    throw new DataAccessException("Failed to get generated ID for game");
                 }
-                throw new DataAccessException("Failed to get generated ID for game");
             }
         } catch (SQLException ex) {
             throw new DataAccessException("Unable to insert game", ex);
@@ -47,8 +54,9 @@ public class GameMySQLDAO implements GameDAO {
                             (Integer) rs.getObject("black_user_id"),
                             rs.getString("game_name")
                     );
+                } else {
+                    return null;
                 }
-                return null;
             }
         } catch (SQLException ex) {
             throw new DataAccessException("Unable to get game by id", ex);

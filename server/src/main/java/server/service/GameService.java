@@ -22,7 +22,9 @@ public class GameService {
     }
 
     public GameData createGame(String gameName) throws Exception {
-        if (gameName == null) throw new Exception("Missing gameName");
+        if (gameName == null) {
+            throw new Exception("Missing gameName");
+        }
         ChessGame chessGame = new ChessGame();
         String stateJson = gson.toJson(chessGame);
         Game game = new Game(stateJson, false, null, null, gameName); // Always pass gameName!
@@ -37,19 +39,27 @@ public class GameService {
     }
 
     public void joinGame(Integer gameID, String playerColor, String username) throws Exception {
-        if (gameID == null) throw new Exception("Missing gameID");
-        if (playerColor == null || playerColor.isBlank()) throw new Exception("Missing playerColor");
+        if (gameID == null) {
+            throw new Exception("Missing gameID");
+        }
+        if (playerColor == null || playerColor.isBlank()) {
+            throw new Exception("Missing playerColor");
+        }
         String color = playerColor.trim().toUpperCase();
-        if (!color.equals("WHITE") && !color.equals("BLACK") && !color.equals("OBSERVER"))
+        if (!color.equals("WHITE") && !color.equals("BLACK") && !color.equals("OBSERVER")) {
             throw new Exception("Invalid color");
+        }
 
         Game game = gameDAO.getGameById(gameID);
-        if (game == null) throw new Exception("Invalid gameID");
+        if (game == null) {
+            throw new Exception("Invalid gameID");
+        }
 
         int userId = userDAO.getUserByUsername(username).getId();
         if (color.equals("WHITE")) {
-            if (game.getWhiteUserId() != null && !game.getWhiteUserId().equals(userId))
+            if (game.getWhiteUserId() != null && !game.getWhiteUserId().equals(userId)) {
                 throw new Exception("Color already taken");
+            }
             String sql = "UPDATE games SET white_user_id = ? WHERE id = ?";
             try (var conn = dataaccess.DatabaseManager.getConnection();
                  var ps = conn.prepareStatement(sql)) {
@@ -58,8 +68,9 @@ public class GameService {
                 ps.executeUpdate();
             }
         } else if (color.equals("BLACK")) {
-            if (game.getBlackUserId() != null && !game.getBlackUserId().equals(userId))
+            if (game.getBlackUserId() != null && !game.getBlackUserId().equals(userId)) {
                 throw new Exception("Color already taken");
+            }
             String sql = "UPDATE games SET black_user_id = ? WHERE id = ?";
             try (var conn = dataaccess.DatabaseManager.getConnection();
                  var ps = conn.prepareStatement(sql)) {
@@ -68,6 +79,7 @@ public class GameService {
                 ps.executeUpdate();
             }
         }
+        //
     }
 
     private GameData toGameData(Game game, String gameNameOverride) {
@@ -77,14 +89,18 @@ public class GameService {
         try {
             if (game.getWhiteUserId() != null) {
                 User whiteUser = userDAO.getUserById(game.getWhiteUserId());
-                if (whiteUser != null) whiteUsername = whiteUser.getUsername();
+                if (whiteUser != null) {
+                    whiteUsername = whiteUser.getUsername();
+                }
             }
             if (game.getBlackUserId() != null) {
                 User blackUser = userDAO.getUserById(game.getBlackUserId());
-                if (blackUser != null) blackUsername = blackUser.getUsername();
+                if (blackUser != null) {
+                    blackUsername = blackUser.getUsername();
+                }
             }
         } catch (DataAccessException e) {
-            // handle error
+            //
         }
         return new GameData(
                 game.getId(),
