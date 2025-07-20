@@ -11,7 +11,7 @@ public class DatabaseManager {
     private static String dbConnectionUrl;
 
     // Table creation statements
-    private static final String[] CreateStatements = {
+    private static final String[] CREATE_STATEMENTS = {
             """
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -69,7 +69,7 @@ public class DatabaseManager {
     public static void initializeTables() throws DataAccessException {
         createDatabase();
         try (var conn = getConnection()) {
-            for (var statement : CreateStatements) {
+            for (var statement : CREATE_STATEMENTS) {
                 try (var preparedStatement = conn.prepareStatement(statement)) {
                     preparedStatement.executeUpdate();
                 }
