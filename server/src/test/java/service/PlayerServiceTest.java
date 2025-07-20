@@ -1,21 +1,30 @@
 package service;
 
+import dataaccess.*;
 import model.AuthData;
-import model.UserData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import server.service.PlayerService;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PlayerServiceTest {
 
     PlayerService playerService;
+    UserDAO userDAO;
+    AuthTokenDAO authTokenDAO;
 
     @BeforeEach
-    void setUp() {
-        playerService = new PlayerService(new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
+    void setUp() throws Exception {
+        userDAO = new UserMySQLDAO();
+        authTokenDAO = new AuthTokenMySQLDAO();
+        playerService = new PlayerService(userDAO, authTokenDAO);
+
+        try (var conn = DatabaseManager.getConnection();
+             var stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM auth_tokens");
+            stmt.executeUpdate("DELETE FROM users");
+        }
     }
 
     @Test
