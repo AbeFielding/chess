@@ -2,25 +2,21 @@ package server;
 
 import static spark.Spark.*;
 import com.google.gson.Gson;
-import model.UserData;
-import model.GameData;
 import model.AuthData;
-import chess.ChessGame;
+import model.GameData;
 import server.service.PlayerService;
 import server.service.GameService;
+import dataaccess.*;
+
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server {
-    static ConcurrentHashMap<String, UserData> users = new ConcurrentHashMap<>();
-    static ConcurrentHashMap<String, AuthData> tokens = new ConcurrentHashMap<>();
-    static ConcurrentHashMap<Integer, GameData> games = new ConcurrentHashMap<>();
-    static AtomicInteger nextGameId = new AtomicInteger(1);
-    static Gson gson = new Gson();
-
-    PlayerService playerService = new PlayerService(users, tokens);
-    GameService gameService = new GameService(games, nextGameId);
+    private static final Gson gson = new Gson();
+    private final UserDAO userDAO = new UserMySQLDAO();
+    private final AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
+    private final GameDAO gameDAO = new GameMySQLDAO();
+    private final PlayerService playerService = new PlayerService(userDAO, authTokenDAO);
+    private final GameService gameService = new GameService(gameDAO, userDAO);
 
     public void stop() {
         spark.Spark.stop();
@@ -41,12 +37,19 @@ public class Server {
 
     private void registerDbEndpoint() {
         delete("/db", (req, res) -> {
-            users.clear();
-            tokens.clear();
-            games.clear();
-            nextGameId.set(1);
-            res.status(200);
-            return "{}";
+            try {
+                try (var conn = dataaccess.DatabaseManager.getConnection();
+                     var stmt = conn.createStatement()) {
+                    stmt.executeUpdate("DELETE FROM auth_tokens");
+                    stmt.executeUpdate("DELETE FROM games");
+                    stmt.executeUpdate("DELETE FROM users");
+                    res.status(200);
+                    return "{}";
+                }
+            } catch (Exception ex) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
+            }
         });
     }
 
@@ -93,64 +96,76 @@ public class Server {
 
         delete("/session", (req, res) -> {
             res.type("application/json");
-            String authHeader = req.headers("Authorization");
-            if (authHeader == null || !tokens.containsKey(authHeader)) {
-                res.status(401);
-                return gson.toJson(new ErrorResponse("Error: Invalid or missing auth token"));
+            try {
+                String authHeader = req.headers("Authorization");
+                if (authHeader == null || authTokenDAO.getToken(authHeader) == null) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Error: Invalid or missing auth token"));
+                }
+                authTokenDAO.deleteToken(authHeader);
+                res.status(200);
+                return "{}";
+            } catch (Exception ex) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
             }
-            tokens.remove(authHeader);
-            res.status(200);
-            return "{}";
         });
     }
 
     private void registerGameEndpoints() {
         post("/game", (req, res) -> {
             res.type("application/json");
-            String authHeader = req.headers("Authorization");
-            AuthData auth = tokens.get(authHeader);
-            if (authHeader == null || auth == null) {
-                res.status(401);
-                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
-            }
-            GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
             try {
+                String authHeader = req.headers("Authorization");
+                var token = authTokenDAO.getToken(authHeader);
+                if (authHeader == null || token == null) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+                }
+                GameRequest gameReq = gson.fromJson(req.body(), GameRequest.class);
+                String username = userDAO.getUserById(token.getUserId()).getUsername();
                 GameData game = gameService.createGame(gameReq.gameName);
                 res.status(200);
                 return gson.toJson(game);
             } catch (Exception e) {
-                res.status(400);
+                res.status(500);
                 return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
             }
         });
 
         get("/game", (req, res) -> {
             res.type("application/json");
-            String authHeader = req.headers("Authorization");
-            AuthData auth = tokens.get(authHeader);
-            if (authHeader == null || auth == null) {
-                res.status(401);
-                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
-            }
-            List<GameData> allGames = gameService.listGames();
-            Map<String, Object> response = new HashMap<>();
-            response.put("games", allGames);
+            try {
+                String authHeader = req.headers("Authorization");
+                var token = authTokenDAO.getToken(authHeader);
+                if (authHeader == null || token == null) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+                }
+                List<GameData> allGames = gameService.listGames();
+                Map<String, Object> response = new HashMap<>();
+                response.put("games", allGames);
 
-            res.status(200);
-            return gson.toJson(response);
+                res.status(200);
+                return gson.toJson(response);
+            } catch (Exception ex) {
+                res.status(500);
+                return gson.toJson(new ErrorResponse("Error: " + ex.getMessage()));
+            }
         });
 
         put("/game", (req, res) -> {
             res.type("application/json");
-            String authHeader = req.headers("Authorization");
-            AuthData auth = tokens.get(authHeader);
-            if (authHeader == null || auth == null) {
-                res.status(401);
-                return gson.toJson(new ErrorResponse("Error: Unauthorized"));
-            }
-            JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
             try {
-                gameService.joinGame(joinReq.gameID, joinReq.playerColor, auth.username());
+                String authHeader = req.headers("Authorization");
+                var token = authTokenDAO.getToken(authHeader);
+                if (authHeader == null || token == null) {
+                    res.status(401);
+                    return gson.toJson(new ErrorResponse("Error: Unauthorized"));
+                }
+                JoinRequest joinReq = gson.fromJson(req.body(), JoinRequest.class);
+                String username = userDAO.getUserById(token.getUserId()).getUsername();
+                gameService.joinGame(joinReq.gameID, joinReq.playerColor, username);
                 res.status(200);
                 return "{}";
             } catch (Exception e) {
@@ -167,6 +182,7 @@ public class Server {
             }
         });
     }
+
     static class RegisterRequest {
         String username;
         String password;
