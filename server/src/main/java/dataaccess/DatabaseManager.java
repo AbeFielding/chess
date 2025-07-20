@@ -34,6 +34,7 @@ public class DatabaseManager {
             state TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             finished BOOLEAN DEFAULT FALSE,
+            game_name VARCHAR(128),
             FOREIGN KEY (white_user_id) REFERENCES users(id) ON DELETE SET NULL,
             FOREIGN KEY (black_user_id) REFERENCES users(id) ON DELETE SET NULL
         )
@@ -99,7 +100,7 @@ public class DatabaseManager {
      * }
      * </code>
      */
-    static Connection getConnection() throws DataAccessException {
+    public static Connection getConnection() throws DataAccessException {
         try {
             //do not wrap the following line with a try-with-resources
             var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
@@ -130,6 +131,6 @@ public class DatabaseManager {
 
         var host = props.getProperty("db.host");
         var port = Integer.parseInt(props.getProperty("db.port"));
-        connectionUrl = String.format("jdbc:mysql://%s:%d", host, port);
+        connectionUrl = String.format("jdbc:mysql://%s:%d/%s", host, port, databaseName);
     }
 }
