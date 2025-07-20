@@ -8,26 +8,26 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AuthTokenMySQLDAOTest {
 
     private AuthTokenDAO dao;
-    private UserDAO userDAO;
     private int userId;
 
     @BeforeEach
     public void setUp() throws DataAccessException {
         DatabaseManager.initializeTables();
         dao = new AuthTokenMySQLDAO();
-        userDAO = new UserMySQLDAO();
         try (var conn = DatabaseManager.getConnection();
              var stmt = conn.createStatement()) {
             stmt.executeUpdate("DELETE FROM auth_tokens");
             stmt.executeUpdate("DELETE FROM users");
         } catch (Exception e) {}
+
+        UserDAO userDAO = new UserMySQLDAO();
         User user = new User("tokenUser", "hashedPassword");
         userDAO.insertUser(user);
         this.userId = userDAO.getUserByUsername("tokenUser").getId();
     }
 
     @Test
-    public void insertAndRetrieveToken() throws DataAccessException {
+    public void insertAndRetrieveToken_Positive() throws DataAccessException {
         AuthToken token = new AuthToken("token123", userId);
         dao.insertToken(token);
 
@@ -37,18 +37,26 @@ public class AuthTokenMySQLDAOTest {
     }
 
     @Test
-    public void retrieveMissingTokenReturnsNull() throws DataAccessException {
+    public void retrieveMissingToken_Negative() throws DataAccessException {
         AuthToken found = dao.getToken("doesnotexist");
         assertNull(found);
     }
 
     @Test
-    public void deleteTokenWorks() throws DataAccessException {
+    public void deleteToken_Positive() throws DataAccessException {
         AuthToken token = new AuthToken("tokenDelete", userId);
         dao.insertToken(token);
 
         dao.deleteToken("tokenDelete");
         AuthToken found = dao.getToken("tokenDelete");
+        assertNull(found);
+    }
+
+    @Test
+    public void deleteToken_Negative() throws DataAccessException {
+        // Deleting a token that doesn't exist should not throw, but remain null
+        dao.deleteToken("not_present_token");
+        AuthToken found = dao.getToken("not_present_token");
         assertNull(found);
     }
 }
