@@ -25,6 +25,13 @@ public class Server {
 
     public int run(int desiredPort) {
         port(desiredPort);
+
+        try {
+            dataaccess.DatabaseManager.initializeTables();
+        } catch (Exception ex) {
+            System.err.println("Failed to initialize DB tables: " + ex.getMessage());
+        }
+
         staticFiles.location("/web");
 
         exception(Exception.class, (ex, req, res) -> {
