@@ -6,6 +6,9 @@ public class Main {
     private boolean running = true;
     private final Scanner scanner = new Scanner(System.in);
 
+    private final ChessServerClient server = new ChessServerClient();
+    private String authToken = null;
+
     public static void main(String[] args) {
         new Main().run();
     }
@@ -47,8 +50,13 @@ public class Main {
                     login   - Login to your account
                     register- Register a new account
                     """);
+            case "login" -> {
+                System.out.println("Login command not implemented yet.");
+            }
+            case "register" -> {
+                System.out.println("Register command not implemented yet.");
+            }
             case "quit" -> running = false;
-            // login and register will be added in next steps
             default -> System.out.println("Unknown command. Type 'help' for options.");
         }
     }
@@ -65,8 +73,27 @@ public class Main {
                     observe   - Observe a game
                     quit      - Exit the program
                     """);
+            case "logout" -> {
+                // Need Implement logout
+                System.out.println("Logout command not implemented yet.");
+            }
+            case "create" -> {
+                // Need Implement create game
+                System.out.println("Create game command not implemented yet.");
+            }
+            case "list" -> {
+                // Need Implement list games
+                System.out.println("List games command not implemented yet.");
+            }
+            case "play" -> {
+                // Need Implement play game
+                System.out.println("Play game command not implemented yet.");
+            }
+            case "observe" -> {
+                // Need Implement observe game
+                System.out.println("Observe game command not implemented yet.");
+            }
             case "quit" -> running = false;
-            // Other commands will be added in next steps
             default -> System.out.println("Unknown command. Type 'help' for options.");
         }
     }
