@@ -92,12 +92,24 @@ public class Main {
                     quit      - Exit the program
                     """);
             case "logout" -> {
-                // Need Implement logout
-                System.out.println("Logout command not implemented yet.");
+                try {
+                    server.logout(authToken);
+                    authToken = null;
+                    state = State.PRELOGIN;
+                    System.out.println("You have been logged out.");
+                } catch (Exception e) {
+                    System.out.println("An error occurred during logout. Please try again.");
+                }
             }
             case "create" -> {
-                // Need Implement create game
-                System.out.println("Create game command not implemented yet.");
+                System.out.print("Enter a name for the new game: ");
+                String gameName = scanner.nextLine().trim();
+                try {
+                    server.createGame(authToken, gameName);
+                    System.out.println("Game created: " + gameName);
+                } catch (Exception e) {
+                    System.out.println("An error occurred while creating the game. Please try again.");
+                }
             }
             case "list" -> {
                 // Need Implement list games
