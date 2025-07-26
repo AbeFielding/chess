@@ -44,17 +44,35 @@ public class Main {
     private void handlePreloginCommand(String cmd) {
         switch (cmd) {
             case "help" -> System.out.println("""
-                    Commands:
-                    help    - Show this menu
-                    quit    - Exit the program
-                    login   - Login to your account
-                    register- Register a new account
-                    """);
+                Commands:
+                help    - Show this menu
+                quit    - Exit the program
+                login   - Login to your account
+                register- Register a new account
+                """);
             case "login" -> {
                 System.out.println("Login command not implemented yet.");
             }
             case "register" -> {
-                System.out.println("Register command not implemented yet.");
+                System.out.print("Enter a username: ");
+                String username = scanner.nextLine().trim();
+                System.out.print("Enter a password: ");
+                String password = scanner.nextLine().trim();
+                System.out.print("Enter an email: ");
+                String email = scanner.nextLine().trim();
+
+                try {
+                    String token = server.register(username, password, email);
+                    if (token != null && !token.isEmpty()) {
+                        System.out.println("Registration successful! You are now logged in.");
+                        authToken = token;
+                        state = State.POSTLOGIN;
+                    } else {
+                        System.out.println("Registration failed. Please try again.");
+                    }
+                } catch (Exception e) {
+                    System.out.println("An error occurred during registration. Please try again.");
+                }
             }
             case "quit" -> running = false;
             default -> System.out.println("Unknown command. Type 'help' for options.");
