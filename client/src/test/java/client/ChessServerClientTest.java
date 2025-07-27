@@ -18,7 +18,9 @@ public class ChessServerClientTest {
 
     @Test
     public void register_success() {
-        assertTrue(true);
+        String token = facade.register("user1", "pass1", "user1@email.com");
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
     }
 
     @Test
@@ -28,7 +30,9 @@ public class ChessServerClientTest {
 
     @Test
     public void login_success() {
-        assertTrue(true);
+        String token = facade.login("user1", "pass1");
+        assertNotNull(token);
+        assertFalse(token.isEmpty());
     }
 
     @Test
