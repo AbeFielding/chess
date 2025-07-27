@@ -44,7 +44,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        Main
+                                        client.Main
                                     </mainClass>
                                 </manifest>
                             </archive>
