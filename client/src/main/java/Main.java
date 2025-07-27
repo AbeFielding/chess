@@ -161,8 +161,30 @@ public class Main {
                 }
             }
             case "observe" -> {
-                // Need Implement observe game
-                System.out.println("Observe game command not implemented yet.");
+                if (lastGameList.length == 0) {
+                    System.out.println("You must list games first.");
+                    break;
+                }
+                System.out.print("Enter the number of the game to observe: ");
+                String numStr = scanner.nextLine().trim();
+                int index = -1;
+                try {
+                    index = Integer.parseInt(numStr) - 1;
+                    if (index < 0 || index >= lastGameList.length) {
+                        System.out.println("Invalid game number.");
+                        break;
+                    }
+                } catch (NumberFormatException ex) {
+                    System.out.println("Please enter a valid number.");
+                    break;
+                }
+
+                try {
+                    server.observeGame(authToken, index);
+                    System.out.printf("Now observing game '%s'.%n", lastGameList[index]);
+                } catch (Exception e) {
+                    System.out.println("An error occurred while observing the game. Please try again.");
+                }
             }
             case "quit" -> running = false;
             default -> System.out.println("Unknown command. Type 'help' for options.");
