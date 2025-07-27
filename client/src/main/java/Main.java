@@ -156,6 +156,7 @@ public class Main {
                 try {
                     server.joinGame(authToken, index, color);
                     System.out.printf("Joined game '%s' as %s player.%n", lastGameList[index], color);
+                    drawChessBoard(color.equals("white"));
                 } catch (Exception e) {
                     System.out.println("An error occurred while joining the game. Please try again.");
                 }
@@ -182,6 +183,7 @@ public class Main {
                 try {
                     server.observeGame(authToken, index);
                     System.out.printf("Now observing game '%s'.%n", lastGameList[index]);
+                    drawChessBoard(true); // Always white perspective for observer
                 } catch (Exception e) {
                     System.out.println("An error occurred while observing the game. Please try again.");
                 }
@@ -189,5 +191,33 @@ public class Main {
             case "quit" -> running = false;
             default -> System.out.println("Unknown command. Type 'help' for options.");
         }
+    }
+
+    // Chessboard
+    private void drawChessBoard(boolean whitePerspective) {
+        String[][] board = {
+                {"r","n","b","q","k","b","n","r"},
+                {"p","p","p","p","p","p","p","p"},
+                {" "," "," "," "," "," "," "," "},
+                {" "," "," "," "," "," "," "," "},
+                {" "," "," "," "," "," "," "," "},
+                {" "," "," "," "," "," "," "," "},
+                {"P","P","P","P","P","P","P","P"},
+                {"R","N","B","Q","K","B","N","R"},
+        };
+        String cols = "  a b c d e f g h";
+        if (!whitePerspective) cols = "  h g f e d c b a";
+        System.out.println(cols);
+        for (int i = 0; i < 8; i++) {
+            int row = whitePerspective ? 8 - i : i + 1;
+            System.out.print(row + " ");
+            for (int j = 0; j < 8; j++) {
+                int col = whitePerspective ? j : 7 - j;
+                String piece = board[whitePerspective ? i : 7 - i][col];
+                System.out.print(piece + " ");
+            }
+            System.out.println(row);
+        }
+        System.out.println(cols);
     }
 }
