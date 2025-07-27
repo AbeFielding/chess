@@ -8,6 +8,7 @@ public class Main {
 
     private final ChessServerClient server = new ChessServerClient();
     private String authToken = null;
+    private String[] lastGameList = new String[0];
 
     public static void main(String[] args) {
         new Main().run();
@@ -112,12 +113,52 @@ public class Main {
                 }
             }
             case "list" -> {
-                // Need Implement list games
-                System.out.println("List games command not implemented yet.");
+                try {
+                    lastGameList = server.listGames(authToken);
+                    if (lastGameList.length == 0) {
+                        System.out.println("No games found.");
+                    } else {
+                        System.out.println("Games:");
+                        for (int i = 0; i < lastGameList.length; i++) {
+                            System.out.printf("%d. %s%n", i + 1, lastGameList[i]);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("An error occurred while listing games. Please try again.");
+                }
             }
             case "play" -> {
-                // Need Implement play game
-                System.out.println("Play game command not implemented yet.");
+                if (lastGameList.length == 0) {
+                    System.out.println("You must list games first.");
+                    break;
+                }
+                System.out.print("Enter the number of the game to join: ");
+                String numStr = scanner.nextLine().trim();
+                int index = -1;
+                try {
+                    index = Integer.parseInt(numStr) - 1;
+                    if (index < 0 || index >= lastGameList.length) {
+                        System.out.println("Invalid game number.");
+                        break;
+                    }
+                } catch (NumberFormatException ex) {
+                    System.out.println("Please enter a valid number.");
+                    break;
+                }
+
+                System.out.print("Enter color to play (white/black): ");
+                String color = scanner.nextLine().trim().toLowerCase();
+                if (!color.equals("white") && !color.equals("black")) {
+                    System.out.println("Invalid color. Please enter 'white' or 'black'.");
+                    break;
+                }
+
+                try {
+                    server.joinGame(authToken, index, color);
+                    System.out.printf("Joined game '%s' as %s player.%n", lastGameList[index], color);
+                } catch (Exception e) {
+                    System.out.println("An error occurred while joining the game. Please try again.");
+                }
             }
             case "observe" -> {
                 // Need Implement observe game
