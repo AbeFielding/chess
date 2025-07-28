@@ -42,17 +42,19 @@ public class ChessServerClientTest {
 
     @Test
     public void createGame_success() {
-        assertTrue(true);
+        assertDoesNotThrow(() -> facade.createGame("dummy-token", "Test Game"));
     }
 
     @Test
     public void listGames_success() {
-        assertTrue(true);
+        String[] games = facade.listGames("dummy-token");
+        assertNotNull(games);
+        assertTrue(games.length > 0);
     }
 
     @Test
     public void joinGame_success() {
-        assertTrue(true);
+        assertDoesNotThrow(() -> facade.joinGame("dummy-token", 1, "white"));
     }
 
     @Test
