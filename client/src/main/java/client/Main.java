@@ -8,7 +8,7 @@ public class Main {
     private boolean running = true;
     private final Scanner scanner = new Scanner(System.in);
 
-    private final ChessServerClient server = new ChessServerClient();
+    private final ServerFacade server = new ServerFacade();
     private String authToken = null;
     private String[] lastGameList = new String[0];
 

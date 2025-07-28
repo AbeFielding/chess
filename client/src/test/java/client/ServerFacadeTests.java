@@ -3,13 +3,13 @@ package client;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ChessServerClientTest {
+public class ServerFacadeTests {
 
-    static ChessServerClient facade;
+    static ServerFacade facade;
 
     @BeforeAll
     public static void init() {
-        facade = new ChessServerClient();
+        facade = new ServerFacade();
     }
 
     @BeforeEach

@@ -1,6 +1,6 @@
 package client;
 
-public class ChessServerClient {
+public class ServerFacade {
     public String register(String username, String password, String email) {
         // Replace with real call
         return "dummy-auth-token";
