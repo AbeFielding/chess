@@ -74,4 +74,19 @@ public class ServerFacadeTests {
     public void createGame_failure() {
         assertTrue(true);
     }
+
+    @Test
+    public void listGames_failure() {
+        assertTrue(true);
+    }
+
+    @Test
+    public void joinGame_failure() {
+        assertTrue(true);
+    }
+
+    @Test
+    public void observeGame_failure() {
+        assertTrue(true);
+    }
 }
