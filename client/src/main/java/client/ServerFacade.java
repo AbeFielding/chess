@@ -87,7 +87,25 @@ public class ServerFacade {
 
 
     public void logout(String authToken) throws IOException {
-        // Put real HTTP DELETE request to /session
+        URL url = new URL("http://localhost:" + port + "/session");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("DELETE");
+        connection.setRequestProperty("Authorization", authToken);
+        connection.connect();
+
+        int status = connection.getResponseCode();
+        InputStream responseStream = (status == 200)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream))) {
+            String response = br.lines().reduce("", (a, b) -> a + b);
+            if (status == 200) {
+                return;
+            } else {
+                throw new IOException("Logout failed: " + response);
+            }
+        }
     }
 
     public String[] listGames(String authToken) throws IOException {

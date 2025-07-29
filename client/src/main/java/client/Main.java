@@ -99,8 +99,6 @@ public class Main {
         }
     }
 
-    // (All post-login code unchanged, but feel free to update listGames, etc., as you implement real ServerFacade logic!)
-
     private void handlePostloginCommand(String cmd) {
         switch (cmd) {
             case "help" -> printPostloginHelp();

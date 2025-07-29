@@ -65,12 +65,16 @@ public class ServerFacadeTests {
 
     @Test
     public void logoutSuccess() throws Exception {
-        assertDoesNotThrow(() -> facade.logout("dummy-token"));
+        AuthData auth = facade.register("logoutuser", "pass", "logout@email.com");
+        assertDoesNotThrow(() -> facade.logout(auth.authToken()));
     }
 
     @Test
     public void logoutFailure() throws Exception {
-        assertTrue(true);
+        Exception ex = assertThrows(Exception.class, () ->
+                facade.logout("bogus-token")
+        );
+        assertTrue(ex.getMessage().toLowerCase().contains("invalid or missing auth token"));
     }
 
     @Test
