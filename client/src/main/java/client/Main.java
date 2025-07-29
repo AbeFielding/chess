@@ -254,65 +254,66 @@ public class Main {
     }
 
     private void drawChessBoard(boolean whitePerspective) {
-        final String RESET = "\u001B[0m";
-        final String LIGHT_BG = "\u001B[48;5;180m";
-        final String DARK_BG = "\u001B[48;5;94m";
-        final String WHITE_FG = "\u001B[38;5;15m";
-        final String BLACK_FG = "\u001B[38;5;0m";
+        final String reset = "\u001B[0m";
+        final String lightBg = "\u001B[48;5;250m";
+        final String darkBg = "\u001B[48;5;21m";
+        final String whiteFg = "\u001B[38;5;102m";
+        final String blackFg = "\u001B[38;5;0m";
+        final String borderBg = "\u001B[48;5;236m";
+        final String borderFg = "\u001B[38;5;15m";
 
-        Map<String, String> pieceSymbols = new HashMap<>();
-        pieceSymbols.put("P", "♙"); pieceSymbols.put("R", "♖"); pieceSymbols.put("N", "♘");
-        pieceSymbols.put("B", "♗"); pieceSymbols.put("Q", "♕"); pieceSymbols.put("K", "♔");
-        pieceSymbols.put("p", "♟"); pieceSymbols.put("r", "♜"); pieceSymbols.put("n", "♞");
-        pieceSymbols.put("b", "♝"); pieceSymbols.put("q", "♛"); pieceSymbols.put("k", "♚");
+        Map<String, String> symbols = Map.ofEntries(
+                Map.entry("P", "P"), Map.entry("R", "R"), Map.entry("N", "N"),
+                Map.entry("B", "B"), Map.entry("Q", "Q"), Map.entry("K", "K"),
+                Map.entry("p", "p"), Map.entry("r", "r"), Map.entry("n", "n"),
+                Map.entry("b", "b"), Map.entry("q", "q"), Map.entry("k", "k")
+        );
 
         String[][] board = {
-                {"r","n","b","q","k","b","n","r"},
-                {"p","p","p","p","p","p","p","p"},
-                {" "," "," "," "," "," "," "," "},
-                {" "," "," "," "," "," "," "," "},
-                {" "," "," "," "," "," "," "," "},
-                {" "," "," "," "," "," "," "," "},
-                {"P","P","P","P","P","P","P","P"},
-                {"R","N","B","Q","K","B","N","R"},
+                {"r", "n", "b", "q", "k", "b", "n", "r"},
+                {"p", "p", "p", "p", "p", "p", "p", "p"},
+                {" ", " ", " ", " ", " ", " ", " ", " "},
+                {" ", " ", " ", " ", " ", " ", " ", " "},
+                {" ", " ", " ", " ", " ", " ", " ", " "},
+                {" ", " ", " ", " ", " ", " ", " ", " "},
+                {"P", "P", "P", "P", "P", "P", "P", "P"},
+                {"R", "N", "B", "Q", "K", "B", "N", "R"}
         };
 
-        printColumnLabels(whitePerspective);
+        char[] columns = whitePerspective ? "abcdefgh".toCharArray() : "hgfedcba".toCharArray();
+        System.out.print(borderBg + borderFg + "   ");
+        for (char c : columns) {
+            System.out.print(" " + c + " ");
+        }
+        System.out.println(" " + reset);
 
         for (int i = 0; i < 8; i++) {
-            int row = whitePerspective ? 8 - i : i + 1;
-            System.out.printf(" %d ", row);
+            int rowIdx = whitePerspective ? 8 - i : i + 1;
+            int boardRow = whitePerspective ? i : 7 - i;
+            System.out.print(borderBg + borderFg + " " + rowIdx + " " + reset);
 
             for (int j = 0; j < 8; j++) {
-                int boardRow = whitePerspective ? i : 7 - i;
                 int boardCol = whitePerspective ? j : 7 - j;
-
                 String piece = board[boardRow][boardCol];
-                String symbol = pieceSymbols.containsKey(piece) ? pieceSymbols.get(piece) : "\u2003";
+                String symbol = symbols.getOrDefault(piece, " ");
 
-                boolean isLightSquare = ((7 - boardRow) + boardCol) % 2 == 0;
-                String bg = isLightSquare ? LIGHT_BG : DARK_BG;
+                boolean isLight = (boardRow + boardCol) % 2 == 0;
+                String bg = isLight ? lightBg : darkBg;
                 String fg = piece.equals(" ") ? "" :
-                        Character.isUpperCase(piece.charAt(0)) ? WHITE_FG : BLACK_FG;
+                        Character.isUpperCase(piece.charAt(0)) ? whiteFg : blackFg;
 
-                System.out.print(bg + fg + " " + symbol + " " + RESET);
+                System.out.print(bg + fg + " " + symbol + " " + reset);
             }
-
-            System.out.printf(" %d%n", row);
+            System.out.println(borderBg + borderFg + " " + rowIdx + " " + reset);
         }
-
-        printColumnLabels(whitePerspective);
+        System.out.print(borderBg + borderFg + "   ");
+        for (char c : columns) {
+            System.out.print(" " + c + " ");
+        }
+        System.out.println(" " + reset);
     }
 
 
-    private void printColumnLabels(boolean whitePerspective) {
-        System.out.print("  ");
-        char[] cols = whitePerspective ? "abcdefgh".toCharArray() : "hgfedcba".toCharArray();
-        for (char col : cols) {
-            System.out.printf(" %c ", col);
-        }
-        System.out.println();
-    }
 
     static class GameSummary {
         int gameId;
