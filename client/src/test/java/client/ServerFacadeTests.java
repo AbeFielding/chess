@@ -2,14 +2,19 @@ package client;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
+import server.Server;
 
 public class ServerFacadeTests {
 
+    private static Server server;
     static ServerFacade facade;
 
     @BeforeAll
     public static void init() {
-        facade = new ServerFacade();
+        server = new Server();
+        var port = server.run(0);
+        System.out.println("Started test HTTP server on " + port);
+        facade = new ServerFacade(port);
     }
 
     @BeforeEach
@@ -17,83 +22,83 @@ public class ServerFacadeTests {
     }
 
     @Test
-    public void register_success() {
+    public void registerSuccess() {
         String token = facade.register("user1", "pass1", "user1@email.com");
         assertNotNull(token);
         assertFalse(token.isEmpty());
     }
 
     @Test
-    public void register_failure() {
+    public void registerFailure() {
         assertTrue(true);
     }
 
     @Test
-    public void register_duplicate() {
+    public void registerDuplicate() {
         assertTrue(true);
     }
 
     @Test
-    public void login_success() {
+    public void loginSuccess() {
         String token = facade.login("user1", "pass1");
         assertNotNull(token);
         assertFalse(token.isEmpty());
     }
 
     @Test
-    public void login_failure() {
+    public void loginFailure() {
         assertTrue(true);
     }
 
     @Test
-    public void logout_success() {
+    public void logoutSuccess() {
         assertDoesNotThrow(() -> facade.logout("dummy-token"));
     }
 
     @Test
-    public void logout_failure() {
+    public void logoutFailure() {
         assertTrue(true);
     }
 
     @Test
-    public void createGame_success() {
+    public void createGameSuccess() {
         assertDoesNotThrow(() -> facade.createGame("dummy-token", "Test Game"));
     }
 
     @Test
-    public void createGame_failure() {
+    public void createGameFailure() {
         assertTrue(true);
     }
 
     @Test
-    public void listGames_success() {
+    public void listGamesSuccess() {
         String[] games = facade.listGames("dummy-token");
         assertNotNull(games);
         assertTrue(games.length > 0);
     }
 
     @Test
-    public void listGames_failure() {
+    public void listGamesFailure() {
         assertTrue(true);
     }
 
     @Test
-    public void joinGame_success() {
+    public void joinGameSuccess() {
         assertDoesNotThrow(() -> facade.joinGame("dummy-token", 1, "white"));
     }
 
     @Test
-    public void joinGame_failure() {
+    public void joinGameFailure() {
         assertTrue(true);
     }
 
     @Test
-    public void observeGame_success() {
+    public void observeGameSuccess() {
         assertDoesNotThrow(() -> facade.observeGame("dummy-token", 1));
     }
 
     @Test
-    public void observeGame_failure() {
+    public void observeGameFailure() {
         assertTrue(true);
     }
 }

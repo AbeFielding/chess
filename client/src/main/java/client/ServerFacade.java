@@ -1,6 +1,12 @@
 package client;
 
 public class ServerFacade {
+    private int port;
+
+    public ServerFacade(int port) {
+        this.port = port;
+    }
+
     public String register(String username, String password, String email) {
         // Replace with real call
         return "dummy-auth-token";
@@ -32,4 +38,3 @@ public class ServerFacade {
         // Replace with real call
     }
 }
-
