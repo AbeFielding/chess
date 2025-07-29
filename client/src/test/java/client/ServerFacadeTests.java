@@ -79,12 +79,16 @@ public class ServerFacadeTests {
 
     @Test
     public void createGameSuccess() throws Exception {
-
+        AuthData auth = facade.register("gamecreator", "pass", "creator@email.com");
+        assertDoesNotThrow(() -> facade.createGame(auth.authToken(), "My Game"));
     }
 
     @Test
     public void createGameFailure() throws Exception {
-        assertTrue(true);
+        Exception ex = assertThrows(Exception.class, () ->
+                facade.createGame("bogus-token", "My Game")
+        );
+        assertTrue(ex.getMessage().toLowerCase().contains("unauthorized"));
     }
 
     @Test

@@ -114,7 +114,33 @@ public class ServerFacade {
     }
 
     public void createGame(String authToken, String gameName) throws IOException {
-        // Put real HTTP DELETE request to /session
+        URL url = new URL("http://localhost:" + port + "/game");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Authorization", authToken);
+        connection.setDoOutput(true);
+
+        JsonObject req = new JsonObject();
+        req.addProperty("gameName", gameName);
+
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(gson.toJson(req).getBytes());
+        }
+
+        int status = connection.getResponseCode();
+        InputStream responseStream = (status == 200)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream))) {
+            String response = br.lines().reduce("", (a, b) -> a + b);
+            if (status == 200) {
+                return;
+            } else {
+                throw new IOException("Create game failed: " + response);
+            }
+        }
     }
 
     public void joinGame(String authToken, int gameId, String color) throws IOException {
