@@ -174,22 +174,33 @@ public class Server {
 
         put("/game", (req, res) -> {
             res.type("application/json");
+            JoinRequest joinReq = null;
+
             try {
                 String authHeader = req.headers("Authorization");
                 var token = authTokenDAO.getToken(authHeader);
+
                 if (authHeader == null || token == null) {
                     res.status(401);
                     return GSON.toJson(new ErrorResponse("Error: Unauthorized"));
                 }
-                JoinRequest joinReq = GSON.fromJson(req.body(), JoinRequest.class);
+
+                joinReq = GSON.fromJson(req.body(), JoinRequest.class);
                 String username = userDAO.getUserById(token.getUserId()).getUsername();
-                gameService.joinGame(joinReq.gameID, joinReq.playerColor, username);
+
+                if (!joinReq.isObserver()) {
+                    gameService.joinGame(joinReq.gameID, joinReq.playerColor, username);
+                }
+
                 res.status(200);
                 return "{}";
+
             } catch (Exception e) {
                 String msg = e.getMessage();
-                if ("Missing gameID".equals(msg) || "Missing playerColor".equals(msg) ||
-                        "Invalid gameID".equals(msg) || "Invalid color".equals(msg)) {
+                if ("Missing gameID".equals(msg) ||
+                        ("Missing playerColor".equals(msg) && joinReq != null && !joinReq.isObserver())) {
+                    res.status(400);
+                } else if ("Invalid gameID".equals(msg) || "Invalid color".equals(msg)) {
                     res.status(400);
                 } else if ("Color already taken".equals(msg)) {
                     res.status(403);
@@ -199,6 +210,7 @@ public class Server {
                 return GSON.toJson(new ErrorResponse("Error: " + msg));
             }
         });
+
     }
 
     static class RegisterRequest {
@@ -220,6 +232,11 @@ public class Server {
     static class JoinRequest {
         String playerColor;
         Integer gameID;
+        boolean observer;
+
+        public boolean isObserver() {
+            return observer;
+        }
     }
 
     public static void main(String[] args) {

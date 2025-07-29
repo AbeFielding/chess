@@ -42,20 +42,28 @@ public class GameService {
         if (gameID == null) {
             throw new Exception("Missing gameID");
         }
-        if (playerColor == null || playerColor.isBlank()) {
-            throw new Exception("Missing playerColor");
-        }
-        String color = playerColor.trim().toUpperCase();
-        if (!color.equals("WHITE") && !color.equals("BLACK") && !color.equals("OBSERVER")) {
-            throw new Exception("Invalid color");
-        }
 
         Game game = gameDAO.getGameById(gameID);
         if (game == null) {
             throw new Exception("Invalid gameID");
         }
 
+        if (playerColor == null || playerColor.isBlank()) {
+            throw new Exception("Missing playerColor");
+        }
+
+        String color = playerColor.trim().toUpperCase();
+
+        if (color.equals("OBSERVER")) {
+            return;
+        }
+
+        if (!color.equals("WHITE") && !color.equals("BLACK")) {
+            throw new Exception("Invalid color");
+        }
+
         int userId = userDAO.getUserByUsername(username).getId();
+
         if (color.equals("WHITE")) {
             if (game.getWhiteUserId() != null && !game.getWhiteUserId().equals(userId)) {
                 throw new Exception("Color already taken");
@@ -79,7 +87,6 @@ public class GameService {
                 ps.executeUpdate();
             }
         }
-        //
     }
 
     private GameData toGameData(Game game, String gameNameOverride) {

@@ -227,6 +227,33 @@ public class ServerFacade {
     }
 
     public void observeGame(String authToken, int gameId) throws IOException {
-        // Put real HTTP DELETE request to /session
+        java.net.URL url = new java.net.URL("http://localhost:" + port + "/game");
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Authorization", authToken);
+        connection.setDoOutput(true);
+
+        com.google.gson.JsonObject req = new com.google.gson.JsonObject();
+        req.addProperty("gameID", gameId);
+        req.addProperty("observer", true);
+
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(new com.google.gson.Gson().toJson(req).getBytes());
+        }
+
+        int status = connection.getResponseCode();
+        InputStream responseStream = (status == 200)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream))) {
+            String response = br.lines().reduce("", (a, b) -> a + b);
+            if (status == 200) {
+                return;
+            } else {
+                throw new IOException("Observe game failed: " + response);
+            }
+        }
     }
 }

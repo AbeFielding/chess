@@ -164,7 +164,19 @@ public class Main {
                     lastGameList[i] = new GameSummary();
                     lastGameList[i].gameId = g.get("gameID").getAsInt();
                     lastGameList[i].name = g.get("gameName").getAsString();
-                    System.out.printf("%d. %s%n", i + 1, lastGameList[i].name);
+
+                    lastGameList[i].whitePlayer = g.has("whiteUsername") && !g.get("whiteUsername").isJsonNull()
+                            ? g.get("whiteUsername").getAsString()
+                            : "empty";
+                    lastGameList[i].blackPlayer = g.has("blackUsername") && !g.get("blackUsername").isJsonNull()
+                            ? g.get("blackUsername").getAsString()
+                            : "empty";
+
+                    System.out.printf("%d. Game Name: %s    White: %s    Black: %s%n",
+                            i + 1,
+                            lastGameList[i].name,
+                            lastGameList[i].whitePlayer,
+                            lastGameList[i].blackPlayer);
                 }
             }
         } catch (Exception e) {
@@ -273,5 +285,7 @@ public class Main {
     static class GameSummary {
         int gameId;
         String name;
+        String whitePlayer;
+        String blackPlayer;
     }
 }

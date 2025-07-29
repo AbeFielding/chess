@@ -131,11 +131,20 @@ public class ServerFacadeTests {
 
     @Test
     public void observeGameSuccess() throws Exception {
-        assertDoesNotThrow(() -> facade.observeGame("dummy-token", 1));
+        AuthData auth = facade.register("observer", "pass", "observer@email.com");
+        facade.createGame(auth.authToken(), "GameForObserve");
+        String rawJson = facade.listGamesRaw(auth.authToken());
+        com.google.gson.JsonObject obj = new com.google.gson.Gson().fromJson(rawJson, com.google.gson.JsonObject.class);
+        com.google.gson.JsonArray arr = obj.getAsJsonArray("games");
+        int gameId = arr.get(0).getAsJsonObject().get("gameID").getAsInt();
+        assertDoesNotThrow(() -> facade.observeGame(auth.authToken(), gameId));
     }
 
     @Test
     public void observeGameFailure() throws Exception {
-        assertTrue(true);
+        Exception ex = assertThrows(Exception.class, () ->
+                facade.observeGame("bogus-token", 1)
+        );
+        assertTrue(ex.getMessage().toLowerCase().contains("unauthorized"));
     }
 }
