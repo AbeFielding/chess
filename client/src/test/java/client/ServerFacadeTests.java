@@ -110,12 +110,23 @@ public class ServerFacadeTests {
 
     @Test
     public void joinGameSuccess() throws Exception {
-        assertDoesNotThrow(() -> facade.joinGame("dummy-token", 1, "white"));
+        AuthData auth = facade.register("joiner", "pass", "joiner@email.com");
+        facade.createGame(auth.authToken(), "GameForJoin");
+
+        String rawJson = facade.listGamesRaw(auth.authToken());
+        com.google.gson.JsonObject obj = new com.google.gson.Gson().fromJson(rawJson, com.google.gson.JsonObject.class);
+        com.google.gson.JsonArray arr = obj.getAsJsonArray("games");
+        int gameId = arr.get(0).getAsJsonObject().get("gameID").getAsInt();
+
+        assertDoesNotThrow(() -> facade.joinGame(auth.authToken(), gameId, "white"));
     }
 
     @Test
     public void joinGameFailure() throws Exception {
-        assertTrue(true);
+        Exception ex = assertThrows(Exception.class, () ->
+                facade.joinGame("bogus-token", 1, "white")
+        );
+        assertTrue(ex.getMessage().toLowerCase().contains("unauthorized"));
     }
 
     @Test

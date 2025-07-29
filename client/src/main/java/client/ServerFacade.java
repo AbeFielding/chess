@@ -194,6 +194,34 @@ public class ServerFacade {
                 return;
             } else {
                 throw new IOException("Join game failed: " + response);
+
+            }
+        }
+    }
+
+    public String listGamesRaw(String authToken) throws IOException {
+        java.net.URL url = new java.net.URL("http://localhost:" + port + "/game");
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Authorization", authToken);
+        connection.setRequestProperty("Accept", "application/json");
+        connection.connect();
+
+        int status = connection.getResponseCode();
+        InputStream responseStream = (status == 200)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+            if (status == 200) {
+                return sb.toString();
+            } else {
+                throw new IOException("List games failed: " + sb);
             }
         }
     }

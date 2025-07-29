@@ -1,6 +1,7 @@
 package client;
 
 import java.util.Scanner;
+import com.google.gson.*;
 import model.AuthData;
 
 public class Main {
@@ -10,8 +11,8 @@ public class Main {
     private final Scanner scanner = new Scanner(System.in);
 
     private final ServerFacade server = new ServerFacade();
-    private String authToken = null;
-    private String[] lastGameList = new String[0];
+    private AuthData authData = null;
+    private GameSummary[] lastGameList = new GameSummary[0];
 
     public static void main(String[] args) {
         new Main().run();
@@ -64,7 +65,7 @@ public class Main {
                     AuthData auth = server.login(username, password);
                     if (auth != null && auth.authToken() != null && !auth.authToken().isEmpty()) {
                         System.out.println("Login successful!");
-                        authToken = auth.authToken();
+                        authData = auth;
                         state = State.POSTLOGIN;
                     } else {
                         System.out.println("Login failed. Please try again.");
@@ -85,7 +86,7 @@ public class Main {
                     AuthData auth = server.register(username, password, email);
                     if (auth != null && auth.authToken() != null && !auth.authToken().isEmpty()) {
                         System.out.println("Registration successful! You are now logged in.");
-                        authToken = auth.authToken();
+                        authData = auth;
                         state = State.POSTLOGIN;
                     } else {
                         System.out.println("Registration failed. Please try again.");
@@ -127,8 +128,8 @@ public class Main {
 
     private void handleLogout() {
         try {
-            server.logout(authToken);
-            authToken = null;
+            server.logout(authData.authToken());
+            authData = null;
             state = State.PRELOGIN;
             System.out.println("You have been logged out.");
         } catch (Exception e) {
@@ -140,7 +141,7 @@ public class Main {
         System.out.print("Enter a name for the new game: ");
         String gameName = scanner.nextLine().trim();
         try {
-            server.createGame(authToken, gameName);
+            server.createGame(authData.authToken(), gameName);
             System.out.println("Game created: " + gameName);
         } catch (Exception e) {
             System.out.println("An error occurred while creating the game. Please try again.");
@@ -149,13 +150,21 @@ public class Main {
 
     private void handleListGames() {
         try {
-            lastGameList = server.listGames(authToken);
-            if (lastGameList.length == 0) {
+            String json = server.listGamesRaw(authData.authToken());
+            JsonObject obj = new Gson().fromJson(json, JsonObject.class);
+            JsonArray arr = obj.getAsJsonArray("games");
+            if (arr.isEmpty()) {
                 System.out.println("No games found.");
+                lastGameList = new GameSummary[0];
             } else {
                 System.out.println("Games:");
-                for (int i = 0; i < lastGameList.length; i++) {
-                    System.out.printf("%d. %s%n", i + 1, lastGameList[i]);
+                lastGameList = new GameSummary[arr.size()];
+                for (int i = 0; i < arr.size(); i++) {
+                    JsonObject g = arr.get(i).getAsJsonObject();
+                    lastGameList[i] = new GameSummary();
+                    lastGameList[i].gameId = g.get("gameID").getAsInt();
+                    lastGameList[i].name = g.get("gameName").getAsString();
+                    System.out.printf("%d. %s%n", i + 1, lastGameList[i].name);
                 }
             }
         } catch (Exception e) {
@@ -170,7 +179,7 @@ public class Main {
         }
         System.out.print("Enter the number of the game to join: ");
         String numStr = scanner.nextLine().trim();
-        int index = -1;
+        int index;
         try {
             index = Integer.parseInt(numStr) - 1;
             if (index < 0 || index >= lastGameList.length) {
@@ -181,6 +190,7 @@ public class Main {
             System.out.println("Please enter a valid number.");
             return;
         }
+        int gameId = lastGameList[index].gameId;
 
         System.out.print("Enter color to play (white/black): ");
         String color = scanner.nextLine().trim().toLowerCase();
@@ -190,11 +200,12 @@ public class Main {
         }
 
         try {
-            server.joinGame(authToken, index, color);
-            System.out.printf("Joined game '%s' as %s player.%n", lastGameList[index], color);
+            server.joinGame(authData.authToken(), gameId, color);
+            System.out.printf("Joined game '%s' as %s player.%n", lastGameList[index].name, color);
             drawChessBoard(color.equals("white"));
         } catch (Exception e) {
             System.out.println("An error occurred while joining the game. Please try again.");
+            System.out.println("Server message: " + e.getMessage());
         }
     }
 
@@ -205,7 +216,7 @@ public class Main {
         }
         System.out.print("Enter the number of the game to observe: ");
         String numStr = scanner.nextLine().trim();
-        int index = -1;
+        int index;
         try {
             index = Integer.parseInt(numStr) - 1;
             if (index < 0 || index >= lastGameList.length) {
@@ -216,13 +227,15 @@ public class Main {
             System.out.println("Please enter a valid number.");
             return;
         }
+        int gameId = lastGameList[index].gameId;
 
         try {
-            server.observeGame(authToken, index);
-            System.out.printf("Now observing game '%s'.%n", lastGameList[index]);
-            drawChessBoard(true); // Always white perspective for observer
+            server.observeGame(authData.authToken(), gameId);
+            System.out.printf("Now observing game '%s'.%n", lastGameList[index].name);
+            drawChessBoard(true);
         } catch (Exception e) {
             System.out.println("An error occurred while observing the game. Please try again.");
+            System.out.println("Server message: " + e.getMessage());
         }
     }
 
@@ -255,5 +268,10 @@ public class Main {
         }
         System.out.println(separator);
         System.out.println(cols);
+    }
+
+    static class GameSummary {
+        int gameId;
+        String name;
     }
 }
