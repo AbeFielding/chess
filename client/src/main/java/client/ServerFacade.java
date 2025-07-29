@@ -3,6 +3,10 @@ package client;
 public class ServerFacade {
     private int port;
 
+    public ServerFacade() {
+        this.port = 8080;
+    }
+
     public ServerFacade(int port) {
         this.port = port;
     }
