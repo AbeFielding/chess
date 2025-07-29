@@ -8,8 +8,12 @@ import java.io.*;
 import model.AuthData;
 
 public class ServerFacade {
-    private int port;
+    public int port;
     private final Gson gson = new Gson();
+
+    public int getPort() {
+        return port;
+    }
 
     public ServerFacade() {
         this.port = 8080;
@@ -46,6 +50,36 @@ public class ServerFacade {
                 return gson.fromJson(response, AuthData.class);
             } else {
                 throw new IOException("Register failed: " + response);
+            }
+        }
+    }
+
+    public AuthData login(String username, String password) throws IOException {
+        URL url = new URL("http://localhost:" + port + "/session");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+
+        JsonObject req = new JsonObject();
+        req.addProperty("username", username);
+        req.addProperty("password", password);
+
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(gson.toJson(req).getBytes());
+        }
+
+        int status = connection.getResponseCode();
+        InputStream responseStream = (status == 200)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream))) {
+            String response = br.lines().reduce("", (a, b) -> a + b);
+            if (status == 200) {
+                return gson.fromJson(response, AuthData.class);
+            } else {
+                throw new IOException("Login failed: " + response);
             }
         }
     }

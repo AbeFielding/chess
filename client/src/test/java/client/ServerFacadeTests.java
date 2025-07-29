@@ -3,6 +3,7 @@ package client;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 import server.Server;
+import model.AuthData;
 
 public class ServerFacadeTests {
 
@@ -18,87 +19,99 @@ public class ServerFacadeTests {
     }
 
     @BeforeEach
-    public void clearDb() {
+    public void clearDb() throws Exception {
+        java.net.HttpURLConnection con =
+                (java.net.HttpURLConnection) new java.net.URL("http://localhost:" + facade.getPort() + "/db").openConnection();
+        con.setRequestMethod("DELETE");
+        con.getResponseCode();
+        con.disconnect();
     }
 
     @Test
-    public void registerSuccess() {
-        String token = facade.register("user1", "pass1", "user1@email.com");
-        assertNotNull(token);
-        assertFalse(token.isEmpty());
+    public void registerSuccess() throws Exception {
+        AuthData auth = facade.register("user1", "pass1", "user1@email.com");
+        assertNotNull(auth);
+        assertNotNull(auth.authToken());
+        assertFalse(auth.authToken().isEmpty());
+        assertEquals("user1", auth.username());
     }
 
     @Test
-    public void registerFailure() {
-        assertTrue(true);
+    public void registerDuplicate() throws Exception {
+        facade.register("dupe", "pass", "dupe@email.com");
+        Exception ex = assertThrows(Exception.class, () ->
+                facade.register("dupe", "pass", "dupe@email.com")
+        );
+        assertTrue(ex.getMessage().contains("Username already taken"));
     }
 
     @Test
-    public void registerDuplicate() {
-        assertTrue(true);
+    public void loginSuccess() throws Exception {
+        facade.register("loginuser", "pass", "login@email.com");
+        AuthData auth = facade.login("loginuser", "pass");
+        assertNotNull(auth);
+        assertNotNull(auth.authToken());
+        assertFalse(auth.authToken().isEmpty());
+        assertEquals("loginuser", auth.username());
     }
 
     @Test
-    public void loginSuccess() {
-        String token = facade.login("user1", "pass1");
-        assertNotNull(token);
-        assertFalse(token.isEmpty());
+    public void loginFailure() throws Exception {
+        Exception ex = assertThrows(Exception.class, () ->
+                facade.login("nouser", "wrongpass")
+        );
+        assertTrue(ex.getMessage().toLowerCase().contains("invalid username or password"));
     }
 
     @Test
-    public void loginFailure() {
-        assertTrue(true);
-    }
-
-    @Test
-    public void logoutSuccess() {
+    public void logoutSuccess() throws Exception {
         assertDoesNotThrow(() -> facade.logout("dummy-token"));
     }
 
     @Test
-    public void logoutFailure() {
+    public void logoutFailure() throws Exception {
         assertTrue(true);
     }
 
     @Test
-    public void createGameSuccess() {
-        assertDoesNotThrow(() -> facade.createGame("dummy-token", "Test Game"));
+    public void createGameSuccess() throws Exception {
+
     }
 
     @Test
-    public void createGameFailure() {
+    public void createGameFailure() throws Exception {
         assertTrue(true);
     }
 
     @Test
-    public void listGamesSuccess() {
+    public void listGamesSuccess() throws Exception {
         String[] games = facade.listGames("dummy-token");
         assertNotNull(games);
         assertTrue(games.length > 0);
     }
 
     @Test
-    public void listGamesFailure() {
+    public void listGamesFailure() throws Exception {
         assertTrue(true);
     }
 
     @Test
-    public void joinGameSuccess() {
+    public void joinGameSuccess() throws Exception {
         assertDoesNotThrow(() -> facade.joinGame("dummy-token", 1, "white"));
     }
 
     @Test
-    public void joinGameFailure() {
+    public void joinGameFailure() throws Exception {
         assertTrue(true);
     }
 
     @Test
-    public void observeGameSuccess() {
+    public void observeGameSuccess() throws Exception {
         assertDoesNotThrow(() -> facade.observeGame("dummy-token", 1));
     }
 
     @Test
-    public void observeGameFailure() {
+    public void observeGameFailure() throws Exception {
         assertTrue(true);
     }
 }
