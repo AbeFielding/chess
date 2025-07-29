@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.io.*;
-import model.AuthData;
+import client.model.AuthData;
 
 public class ServerFacade {
     public int port;

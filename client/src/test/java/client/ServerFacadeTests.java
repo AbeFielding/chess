@@ -3,7 +3,7 @@ package client;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 import server.Server;
-import model.AuthData;
+import client.model.AuthData;
 
 public class ServerFacadeTests {
 

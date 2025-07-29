@@ -2,7 +2,7 @@ package client;
 
 import java.util.Scanner;
 import com.google.gson.*;
-import model.AuthData;
+import client.model.AuthData;
 import java.util.Map;
 import java.util.HashMap;
 
