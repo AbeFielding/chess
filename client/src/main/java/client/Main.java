@@ -3,6 +3,8 @@ package client;
 import java.util.Scanner;
 import com.google.gson.*;
 import model.AuthData;
+import java.util.Map;
+import java.util.HashMap;
 
 public class Main {
     private enum State { PRELOGIN, POSTLOGIN }
@@ -252,6 +254,18 @@ public class Main {
     }
 
     private void drawChessBoard(boolean whitePerspective) {
+        final String RESET = "\u001B[0m";
+        final String LIGHT_BG = "\u001B[48;5;180m";
+        final String DARK_BG = "\u001B[48;5;94m";
+        final String WHITE_FG = "\u001B[38;5;15m";
+        final String BLACK_FG = "\u001B[38;5;0m";
+
+        Map<String, String> pieceSymbols = new HashMap<>();
+        pieceSymbols.put("P", "♙"); pieceSymbols.put("R", "♖"); pieceSymbols.put("N", "♘");
+        pieceSymbols.put("B", "♗"); pieceSymbols.put("Q", "♕"); pieceSymbols.put("K", "♔");
+        pieceSymbols.put("p", "♟"); pieceSymbols.put("r", "♜"); pieceSymbols.put("n", "♞");
+        pieceSymbols.put("b", "♝"); pieceSymbols.put("q", "♛"); pieceSymbols.put("k", "♚");
+
         String[][] board = {
                 {"r","n","b","q","k","b","n","r"},
                 {"p","p","p","p","p","p","p","p"},
@@ -262,24 +276,42 @@ public class Main {
                 {"P","P","P","P","P","P","P","P"},
                 {"R","N","B","Q","K","B","N","R"},
         };
-        String cols = "    a   b   c   d   e   f   g   h";
-        if (!whitePerspective) cols = "    h   g   f   e   d   c   b   a";
-        String separator = "  +---+---+---+---+---+---+---+---+";
 
-        System.out.println(cols);
+        printColumnLabels(whitePerspective);
+
         for (int i = 0; i < 8; i++) {
-            System.out.println(separator);
             int row = whitePerspective ? 8 - i : i + 1;
-            System.out.print(row + " |");
+            System.out.printf(" %d ", row);
+
             for (int j = 0; j < 8; j++) {
-                int col = whitePerspective ? j : 7 - j;
-                String piece = board[whitePerspective ? i : 7 - i][col];
-                System.out.print(" " + piece + " |");
+                int boardRow = whitePerspective ? i : 7 - i;
+                int boardCol = whitePerspective ? j : 7 - j;
+
+                String piece = board[boardRow][boardCol];
+                String symbol = pieceSymbols.containsKey(piece) ? pieceSymbols.get(piece) : "\u2003";
+
+                boolean isLightSquare = ((7 - boardRow) + boardCol) % 2 == 0;
+                String bg = isLightSquare ? LIGHT_BG : DARK_BG;
+                String fg = piece.equals(" ") ? "" :
+                        Character.isUpperCase(piece.charAt(0)) ? WHITE_FG : BLACK_FG;
+
+                System.out.print(bg + fg + " " + symbol + " " + RESET);
             }
-            System.out.println(" " + row);
+
+            System.out.printf(" %d%n", row);
         }
-        System.out.println(separator);
-        System.out.println(cols);
+
+        printColumnLabels(whitePerspective);
+    }
+
+
+    private void printColumnLabels(boolean whitePerspective) {
+        System.out.print("  ");
+        char[] cols = whitePerspective ? "abcdefgh".toCharArray() : "hgfedcba".toCharArray();
+        for (char col : cols) {
+            System.out.printf(" %c ", col);
+        }
+        System.out.println();
     }
 
     static class GameSummary {
