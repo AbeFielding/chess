@@ -221,4 +221,17 @@ public class Server {
         String playerColor;
         Integer gameID;
     }
+
+    public static void main(String[] args) {
+        int port = 8080;
+        if (args.length > 0) {
+            try {
+                port = Integer.parseInt(args[0]);
+            } catch (NumberFormatException ignored) {}
+        }
+        Server server = new Server();
+        server.run(port);
+        System.out.println("Server started on port " + port);
+    }
+
 }

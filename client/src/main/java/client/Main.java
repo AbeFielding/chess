@@ -1,6 +1,7 @@
 package client;
 
 import java.util.Scanner;
+import model.AuthData;
 
 public class Main {
     private enum State { PRELOGIN, POSTLOGIN }
@@ -54,7 +55,23 @@ public class Main {
                 register- Register a new account
                 """);
             case "login" -> {
-                System.out.println("Login command not implemented yet.");
+                System.out.print("Enter a username: ");
+                String username = scanner.nextLine().trim();
+                System.out.print("Enter a password: ");
+                String password = scanner.nextLine().trim();
+
+                try {
+                    AuthData auth = server.login(username, password);
+                    if (auth != null && auth.authToken() != null && !auth.authToken().isEmpty()) {
+                        System.out.println("Login successful!");
+                        authToken = auth.authToken();
+                        state = State.POSTLOGIN;
+                    } else {
+                        System.out.println("Login failed. Please try again.");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Login failed: " + e.getMessage());
+                }
             }
             case "register" -> {
                 System.out.print("Enter a username: ");
@@ -65,22 +82,24 @@ public class Main {
                 String email = scanner.nextLine().trim();
 
                 try {
-                    String token = server.register(username, password, email);
-                    if (token != null && !token.isEmpty()) {
+                    AuthData auth = server.register(username, password, email);
+                    if (auth != null && auth.authToken() != null && !auth.authToken().isEmpty()) {
                         System.out.println("Registration successful! You are now logged in.");
-                        authToken = token;
+                        authToken = auth.authToken();
                         state = State.POSTLOGIN;
                     } else {
                         System.out.println("Registration failed. Please try again.");
                     }
                 } catch (Exception e) {
-                    System.out.println("An error occurred during registration. Please try again.");
+                    System.out.println("Registration failed: " + e.getMessage());
                 }
             }
             case "quit" -> running = false;
             default -> System.out.println("Unknown command. Type 'help' for options.");
         }
     }
+
+    // (All post-login code unchanged, but feel free to update listGames, etc., as you implement real ServerFacade logic!)
 
     private void handlePostloginCommand(String cmd) {
         switch (cmd) {
