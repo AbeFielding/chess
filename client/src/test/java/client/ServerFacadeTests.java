@@ -93,14 +93,19 @@ public class ServerFacadeTests {
 
     @Test
     public void listGamesSuccess() throws Exception {
-        String[] games = facade.listGames("dummy-token");
+        AuthData auth = facade.register("lister", "pass", "lister@email.com");
+        facade.createGame(auth.authToken(), "My Game");
+        String[] games = facade.listGames(auth.authToken());
         assertNotNull(games);
         assertTrue(games.length > 0);
     }
 
     @Test
     public void listGamesFailure() throws Exception {
-        assertTrue(true);
+        Exception ex = assertThrows(Exception.class, () ->
+                facade.listGames("bogus-token")
+        );
+        assertTrue(ex.getMessage().toLowerCase().contains("unauthorized"));
     }
 
     @Test

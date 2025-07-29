@@ -109,8 +109,32 @@ public class ServerFacade {
     }
 
     public String[] listGames(String authToken) throws IOException {
-        // Put real HTTP DELETE request to /session
-        return new String[]{"Game 1", "Game 2"};
+        URL url = new URL("http://localhost:" + port + "/game");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("Authorization", authToken);
+        connection.setRequestProperty("Accept", "application/json");
+        connection.connect();
+
+        int status = connection.getResponseCode();
+        InputStream responseStream = (status == 200)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream))) {
+            String response = br.lines().reduce("", (a, b) -> a + b);
+            if (status == 200) {
+                com.google.gson.JsonObject obj = gson.fromJson(response, com.google.gson.JsonObject.class);
+                com.google.gson.JsonArray arr = obj.getAsJsonArray("games");
+                String[] games = new String[arr.size()];
+                for (int i = 0; i < arr.size(); i++) {
+                    games[i] = arr.get(i).getAsJsonObject().get("gameName").getAsString();
+                }
+                return games;
+            } else {
+                throw new IOException("List games failed: " + response);
+            }
+        }
     }
 
     public void createGame(String authToken, String gameName) throws IOException {
@@ -144,7 +168,34 @@ public class ServerFacade {
     }
 
     public void joinGame(String authToken, int gameId, String color) throws IOException {
-        // Put real HTTP DELETE request to /session
+        URL url = new URL("http://localhost:" + port + "/game");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Authorization", authToken);
+        connection.setDoOutput(true);
+
+        JsonObject req = new JsonObject();
+        req.addProperty("gameID", gameId);
+        req.addProperty("playerColor", color);
+
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(gson.toJson(req).getBytes());
+        }
+
+        int status = connection.getResponseCode();
+        InputStream responseStream = (status == 200)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(responseStream))) {
+            String response = br.lines().reduce("", (a, b) -> a + b);
+            if (status == 200) {
+                return;
+            } else {
+                throw new IOException("Join game failed: " + response);
+            }
+        }
     }
 
     public void observeGame(String authToken, int gameId) throws IOException {
