@@ -7,6 +7,8 @@ import model.GameData;
 import server.service.PlayerService;
 import server.service.GameService;
 import dataaccess.*;
+import static spark.Spark.webSocket;
+import websocket.WebSocketHandler;
 
 import java.util.*;
 
@@ -25,6 +27,7 @@ public class Server {
 
     public int run(int desiredPort) {
         port(desiredPort);
+        webSocket("/ws", WebSocketHandler.class);
 
         try {
             dataaccess.DatabaseManager.initializeTables();
@@ -44,7 +47,9 @@ public class Server {
         registerUserEndpoints();
         registerGameEndpoints();
 
+        init();
         awaitInitialization();
+
         return port();
     }
 
