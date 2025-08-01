@@ -12,6 +12,7 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 import websocket.messages.*;
+import chess.InvalidMoveException;
 
 import java.io.IOException;
 import java.util.*;
@@ -143,6 +144,26 @@ public class WebSocketHandler {
 
     private void handleMakeMove(Session session, MakeMoveCommand command) {
         // TODO: validate move, update game, broadcast LOAD_GAME + NOTIFICATION
+        try {
+            AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
+            GameDAO gameDAO = new GameMySQLDAO();
+            UserDAO userDAO = new UserMySQLDAO();
+
+            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
+            if (token == null) {
+                sendError(session, "Error: Invalid auth token");
+                return;
+            }
+
+            int userId = token.getUserId();
+            String username = userDAO.getUserById(userId).getUsername();
+            int gameID = command.getGameID();
+
+            Game game = gameDAO.getGameById(gameID);
+            if (game == null) {
+                sendError(session, "Error: Game not found");
+                return;
+            }
     }
 
     private void handleLeave(Session session, UserGameCommand command) {

@@ -26,6 +26,10 @@ public class Game {
         this.gameName = gameName;
     }
 
+    public void setState(String state) {
+        this.state = state;
+    }
+
     public int getId() { return id; }
     public String getState() { return state; }
     public boolean isFinished() { return finished; }
