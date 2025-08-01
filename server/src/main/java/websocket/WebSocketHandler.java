@@ -143,7 +143,6 @@ public class WebSocketHandler {
     }
 
     private void handleMakeMove(Session session, MakeMoveCommand command) {
-        // TODO: validate move, update game, broadcast LOAD_GAME + NOTIFICATION
         try {
             AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
             GameDAO gameDAO = new GameMySQLDAO();
@@ -164,6 +163,57 @@ public class WebSocketHandler {
                 sendError(session, "Error: Game not found");
                 return;
             }
+
+            ChessGame chessGame = gson.fromJson(game.getState(), ChessGame.class);
+
+            String whiteUsername = getUsernameFromUserId(game.getWhiteUserId(), userDAO);
+            String blackUsername = getUsernameFromUserId(game.getBlackUserId(), userDAO);
+
+            boolean isWhite = username.equals(whiteUsername);
+            boolean isBlack = username.equals(blackUsername);
+            ChessGame.TeamColor playerColor = isWhite ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+
+            if ((chessGame.getTeamTurn() == ChessGame.TeamColor.WHITE && !isWhite) ||
+                    (chessGame.getTeamTurn() == ChessGame.TeamColor.BLACK && !isBlack)) {
+                sendError(session, "Error: Not your turn");
+                return;
+            }
+
+            chessGame.makeMove(command.getMove());
+
+            game.setState(gson.toJson(chessGame));
+            gameDAO.updateGameState(game.getId(), gson.toJson(chessGame), false);
+
+            GameData updatedData = new GameData(
+                    game.getId(),
+                    game.getGameName(),
+                    whiteUsername,
+                    blackUsername,
+                    chessGame
+            );
+
+            LoadGameMessage load = new LoadGameMessage(updatedData);
+            broadcastToGame(gameID, gson.toJson(load), Set.of());
+
+            String moveSummary = username + " moved " + command.getMove().toString();
+            broadcastToGame(gameID, gson.toJson(new NotificationMessage(moveSummary)), Set.of());
+
+            ChessGame.TeamColor opponent = (playerColor == ChessGame.TeamColor.WHITE)
+                    ? ChessGame.TeamColor.BLACK
+                    : ChessGame.TeamColor.WHITE;
+
+            if (chessGame.isInCheckmate(opponent)) {
+                broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in checkmate!")), Set.of());
+            } else if (chessGame.isInCheck(opponent)) {
+                broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in check.")), Set.of());
+            }
+
+        } catch (InvalidMoveException e) {
+            sendError(session, "Error: Invalid move - " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(session, "Error: Failed to make move - " + e.getMessage());
+        }
     }
 
     private void handleLeave(Session session, UserGameCommand command) {
