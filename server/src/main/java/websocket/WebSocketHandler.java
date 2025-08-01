@@ -1,10 +1,16 @@
 package websocket;
 
 import com.google.gson.Gson;
+import dataaccess.*;
+import model.AuthToken;
+import model.Game;
+import model.GameData;
+import model.User;
+import chess.ChessGame;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
-
-import websocket.commands.*;
+import websocket.commands.MakeMoveCommand;
+import websocket.commands.UserGameCommand;
 import websocket.messages.*;
 
 import java.io.IOException;
@@ -63,13 +69,76 @@ public class WebSocketHandler {
     }
 
     private void handleConnect(Session session, UserGameCommand command) {
-        // TODO: validate token, gameID, get username, etc.
+        try {
+            AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
+            GameDAO gameDAO = new GameMySQLDAO();
+            UserDAO userDAO = new UserMySQLDAO();
 
-        userSessions.put(session, "TODO-username");
-        gameSessions.computeIfAbsent(command.getGameID(), k -> new HashSet<>()).add(session);
+            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
+            if (token == null) {
+                sendError(session, "Error: Invalid auth token");
+                return;
+            }
 
-        // TODO: send LOAD_GAME to this client
-        // TODO: broadcast NOTIFICATION to others
+            int userId = token.getUserId();
+            User user = userDAO.getUserById(userId);
+            if (user == null) {
+                sendError(session, "Error: User not found");
+                return;
+            }
+
+            String username = user.getUsername();
+            int gameID = command.getGameID();
+
+            Game game = gameDAO.getGameById(gameID);
+            if (game == null) {
+                sendError(session, "Error: Game not found");
+                return;
+            }
+
+            userSessions.put(session, username);
+            gameSessions.computeIfAbsent(gameID, k -> new HashSet<>()).add(session);
+
+            String whiteUsername = getUsernameFromUserId(game.getWhiteUserId(), userDAO);
+            String blackUsername = getUsernameFromUserId(game.getBlackUserId(), userDAO);
+
+            ChessGame chessGame = gson.fromJson(game.getState(), ChessGame.class);
+
+            GameData gameData = new GameData(
+                    game.getId(),
+                    game.getGameName(),
+                    whiteUsername,
+                    blackUsername,
+                    chessGame
+            );
+
+            LoadGameMessage loadMsg = new LoadGameMessage(gameData);
+            session.getRemote().sendString(gson.toJson(loadMsg));
+
+            String role = getRole(username, whiteUsername, blackUsername);
+            String msg = username + " joined the game as " + role;
+            NotificationMessage notify = new NotificationMessage(msg);
+            broadcastToGame(gameID, gson.toJson(notify), except(session));
+
+            System.out.println("✅ " + msg);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(session, "Error: Failed to connect: " + e.getMessage());
+        }
+    }
+
+
+    private String getUsernameFromUserId(Integer userId, UserDAO userDAO) throws DataAccessException {
+        if (userId == null) return null;
+        User user = userDAO.getUserById(userId);
+        return user != null ? user.getUsername() : null;
+    }
+
+    private String getRole(String username, String white, String black) {
+        if (username.equals(white)) return "White";
+        if (username.equals(black)) return "Black";
+        return "Observer";
     }
 
     private void handleMakeMove(Session session, MakeMoveCommand command) {
@@ -84,6 +153,22 @@ public class WebSocketHandler {
 
     private void handleResign(Session session, UserGameCommand command) {
         // TODO: mark game over, broadcast notification
+    }
+
+    private void broadcastToGame(int gameID, String json, Set<Session> skipSessions) {
+        for (Session s : gameSessions.getOrDefault(gameID, Set.of())) {
+            if (!skipSessions.contains(s) && s.isOpen()) {
+                try {
+                    s.getRemote().sendString(json);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private Set<Session> except(Session... sessions) {
+        return new HashSet<>(Arrays.asList(sessions));
     }
 
     private void sendError(Session session, String errorMsg) {
