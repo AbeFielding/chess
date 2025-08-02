@@ -223,7 +223,43 @@ public class WebSocketHandler {
     }
 
     private void handleResign(Session session, UserGameCommand command) {
-        // TODO: mark game over, broadcast notification
+        try {
+            AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
+            GameDAO gameDAO = new GameMySQLDAO();
+            UserDAO userDAO = new UserMySQLDAO();
+
+            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
+            if (token == null) {
+                sendError(session, "Error: Invalid auth token");
+                return;
+            }
+
+            int userId = token.getUserId();
+            String username = userDAO.getUserById(userId).getUsername();
+            int gameID = command.getGameID();
+
+            Game game = gameDAO.getGameById(gameID);
+            if (game == null) {
+                sendError(session, "Error: Game not found");
+                return;
+            }
+
+            if (game.isFinished()) {
+                sendError(session, "Error: Game already finished");
+                return;
+            }
+
+            gameDAO.updateGameState(gameID, game.getState(), true);
+
+            String message = username + " resigned. Game over.";
+            broadcastToGame(gameID, gson.toJson(new NotificationMessage(message)), Set.of());
+
+            System.out.println("🏳️ " + message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(session, "Error: Failed to resign - " + e.getMessage());
+        }
     }
 
     private void broadcastToGame(int gameID, String json, Set<Session> skipSessions) {
