@@ -370,6 +370,42 @@ public class Main {
         }
     }
 
+    private void handleHighlight(String input, GameplayContext context) {
+        String[] parts = input.trim().split("\\s+");
+        if (parts.length != 2) {
+            System.out.println("Usage: highlight e2");
+            return;
+        }
+
+        try {
+            ChessPosition from = parsePosition(parts[1]);
+            var piece = context.game.getBoard().getPiece(from);
+            if (piece == null) {
+                System.out.println("No piece at that position.");
+                return;
+            }
+
+            var moves = context.game.validMoves(from);
+            if (moves.isEmpty()) {
+                System.out.println("No legal moves for that piece.");
+                return;
+            }
+
+            System.out.println("Legal moves for " + parts[1] + ":");
+            for (var move : moves) {
+                System.out.println("  -> " + formatPosition(move.getEndPosition()));
+            }
+
+        } catch (Exception e) {
+            System.out.println("Invalid input. Try: highlight e2");
+        }
+    }
+
+    private String formatPosition(ChessPosition pos) {
+        char col = (char) ('a' + pos.getColumn() - 1);
+        return "" + col + pos.getRow();
+    }
+
     private void drawChessBoard(boolean whitePerspective) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
@@ -442,7 +478,7 @@ public class Main {
     static class GameplayContext {
         String authToken;
         int gameID;
-        ChessGame.TeamColor playerColor; // null for observer
+        ChessGame.TeamColor playerColor;
         ChessGame game;
         ClientWebSocket socket;
 
