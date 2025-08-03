@@ -164,6 +164,11 @@ public class WebSocketHandler {
                 return;
             }
 
+            if (game.isFinished()) {
+                sendError(session, "Error: Game is already over");
+                return;
+            }
+
             ChessGame chessGame = gson.fromJson(game.getState(), ChessGame.class);
 
             String whiteUsername = getUsernameFromUserId(game.getWhiteUserId(), userDAO);
@@ -213,6 +218,7 @@ public class WebSocketHandler {
                     : ChessGame.TeamColor.WHITE;
 
             if (chessGame.isInCheckmate(opponent)) {
+                gameDAO.updateGameState(game.getId(), gson.toJson(chessGame), true); // ✅ mark game over
                 broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in checkmate!")), Set.of());
             } else if (chessGame.isInCheck(opponent)) {
                 broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in check.")), Set.of());
