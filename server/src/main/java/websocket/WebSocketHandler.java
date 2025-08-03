@@ -180,10 +180,8 @@ public class WebSocketHandler {
             }
 
             chessGame.makeMove(command.getMove());
-
             game.setState(gson.toJson(chessGame));
             gameDAO.updateGameState(game.getId(), gson.toJson(chessGame), false);
-
             GameData updatedData = new GameData(
                     game.getId(),
                     game.getGameName(),
@@ -191,12 +189,24 @@ public class WebSocketHandler {
                     blackUsername,
                     chessGame
             );
-
             LoadGameMessage load = new LoadGameMessage(updatedData);
-            broadcastToGame(gameID, gson.toJson(load), Set.of());
-
             String moveSummary = username + " moved " + command.getMove().toString();
-            broadcastToGame(gameID, gson.toJson(new NotificationMessage(moveSummary)), Set.of());
+            NotificationMessage notification = new NotificationMessage(moveSummary);
+
+            Set<Session> allSessions = gameSessions.getOrDefault(gameID, Set.of());
+            Set<Session> otherSessions = new HashSet<>(allSessions);
+            otherSessions.remove(session);
+
+            if (session.isOpen()) {
+                session.getRemote().sendString(gson.toJson(load));
+            }
+
+            for (Session s : otherSessions) {
+                if (s.isOpen()) {
+                    s.getRemote().sendString(gson.toJson(load));
+                    s.getRemote().sendString(gson.toJson(notification));
+                }
+            }
 
             ChessGame.TeamColor opponent = (playerColor == ChessGame.TeamColor.WHITE)
                     ? ChessGame.TeamColor.BLACK
