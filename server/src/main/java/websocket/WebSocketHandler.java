@@ -105,15 +105,7 @@ public class WebSocketHandler {
 
             ChessGame chessGame = gson.fromJson(game.getState(), ChessGame.class);
 
-            GameData gameData = new GameData(
-                    game.getId(),
-                    game.getGameName(),
-                    whiteUsername,
-                    blackUsername,
-                    chessGame
-            );
-
-            LoadGameMessage loadMsg = new LoadGameMessage(gameData);
+            LoadGameMessage loadMsg = new LoadGameMessage(chessGame);
             session.getRemote().sendString(gson.toJson(loadMsg));
 
             String role = getRole(username, whiteUsername, blackUsername);
@@ -185,17 +177,12 @@ public class WebSocketHandler {
             }
 
             chessGame.makeMove(command.getMove());
-            game.setState(gson.toJson(chessGame));
-            gameDAO.updateGameState(game.getId(), gson.toJson(chessGame), false);
-            GameData updatedData = new GameData(
-                    game.getId(),
-                    game.getGameName(),
-                    whiteUsername,
-                    blackUsername,
-                    chessGame
-            );
-            LoadGameMessage load = new LoadGameMessage(updatedData);
-            String moveSummary = username + " moved " + command.getMove().toString();
+            String newStateJson = gson.toJson(chessGame);
+            game.setState(newStateJson);
+            gameDAO.updateGameState(game.getId(), newStateJson, false);
+
+            LoadGameMessage load = new LoadGameMessage(chessGame);
+            String moveSummary = username + " moved " + command.getMove();
             NotificationMessage notification = new NotificationMessage(moveSummary);
 
             Set<Session> allSessions = gameSessions.getOrDefault(gameID, Set.of());
@@ -218,7 +205,7 @@ public class WebSocketHandler {
                     : ChessGame.TeamColor.WHITE;
 
             if (chessGame.isInCheckmate(opponent)) {
-                gameDAO.updateGameState(game.getId(), gson.toJson(chessGame), true); // ✅ mark game over
+                gameDAO.updateGameState(game.getId(), newStateJson, true);
                 broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in checkmate!")), Set.of());
             } else if (chessGame.isInCheck(opponent)) {
                 broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in check.")), Set.of());

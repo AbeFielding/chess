@@ -250,6 +250,11 @@ public class ChessGame {
         return this.board;
     }
 
+    public void copyFrom(ChessGame updated) {
+        this.board = updated.getBoard();
+        this.currentTurn = updated.getTeamTurn();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
