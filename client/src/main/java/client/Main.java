@@ -345,6 +345,31 @@ public class Main {
     """);
     }
 
+    private void leaveGame(GameplayContext context) {
+        context.socket.send(new websocket.commands.UserGameCommand(
+                websocket.commands.UserGameCommand.CommandType.LEAVE,
+                context.authToken,
+                context.gameID
+        ));
+        context.socket.close();
+        System.out.println("Left game.");
+    }
+
+    private void resignGame(GameplayContext context) {
+        System.out.print("Are you sure you want to resign? (y/n): ");
+        String confirm = scanner.nextLine().trim().toLowerCase();
+        if (confirm.equals("y")) {
+            context.socket.send(new websocket.commands.UserGameCommand(
+                    websocket.commands.UserGameCommand.CommandType.RESIGN,
+                    context.authToken,
+                    context.gameID
+            ));
+            System.out.println("You resigned.");
+        } else {
+            System.out.println("Canceled resignation.");
+        }
+    }
+
     private void drawChessBoard(boolean whitePerspective) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
