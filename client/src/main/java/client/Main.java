@@ -333,6 +333,17 @@ public class Main {
         }
     }
 
+    private void printGameplayHelp() {
+        System.out.println("""
+        Commands:
+        help           - Show available commands
+        move e2 e4     - Make a move
+        highlight e2   - Show legal moves for a piece
+        redraw         - Redraw the board
+        resign         - Resign from the game
+        leave          - Leave the game and return to lobby
+    """);
+    }
 
     private void drawChessBoard(boolean whitePerspective) {
         final String reset = "\u001B[0m";
