@@ -306,6 +306,34 @@ public class Main {
         return new ChessPosition(row, col);
     }
 
+    private void runGameplayUI(GameplayContext context) {
+        System.out.println("Type 'help' to see available gameplay commands.");
+        drawChessBoard(context.isWhitePerspective());
+
+        while (true) {
+            System.out.print("(game)> ");
+            String input = scanner.nextLine().trim();
+
+            if (input.equalsIgnoreCase("help")) {
+                printGameplayHelp();
+            } else if (input.equalsIgnoreCase("redraw")) {
+                drawChessBoard(context.isWhitePerspective());
+            } else if (input.equalsIgnoreCase("leave")) {
+                leaveGame(context);
+                return;
+            } else if (input.equalsIgnoreCase("resign")) {
+                resignGame(context);
+            } else if (input.toLowerCase().startsWith("move ")) {
+                handleMove(input, context);
+            } else if (input.toLowerCase().startsWith("highlight ")) {
+                handleHighlight(input, context);
+            } else {
+                System.out.println("Unknown command. Type 'help' to see available options.");
+            }
+        }
+    }
+
+
     private void drawChessBoard(boolean whitePerspective) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
