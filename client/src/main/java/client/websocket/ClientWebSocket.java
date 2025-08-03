@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import websocket.commands.UserGameCommand;
 import websocket.messages.*;
 import websocket.commands.UserGameCommand.CommandType;
+import websocket.commands.MakeMoveCommand;
 
 import javax.websocket.*;
 import java.net.URI;
@@ -79,6 +80,13 @@ public class ClientWebSocket {
             }
         } catch (Exception e) {
             System.out.println("Error closing WebSocket: " + e.getMessage());
+        }
+    }
+
+    public void send(MakeMoveCommand moveCmd) {
+        if (session != null && session.isOpen()) {
+            String json = gson.toJson(moveCmd);
+            session.getAsyncRemote().sendText(json);
         }
     }
 }

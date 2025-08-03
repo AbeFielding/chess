@@ -5,6 +5,11 @@ import com.google.gson.*;
 import client.model.AuthData;
 import java.util.Map;
 import java.util.HashMap;
+import chess.ChessGame;
+import chess.ChessMove;
+import chess.ChessPosition;
+import client.websocket.ClientWebSocket;
+import websocket.commands.MakeMoveCommand;
 
 public class Main {
     private enum State { PRELOGIN, POSTLOGIN }
@@ -253,6 +258,54 @@ public class Main {
         }
     }
 
+    private void handleMove(String input, GameplayContext context) {
+        if (context.playerColor == null) {
+            System.out.println("Observers cannot make moves.");
+            return;
+        }
+
+        if (context.game == null) {
+            System.out.println("Game not loaded.");
+            return;
+        }
+
+        String[] parts = input.trim().split("\\s+");
+        if (parts.length < 3) {
+            System.out.println("Usage: move e2 e4");
+            return;
+        }
+
+        try {
+            ChessPosition from = parsePosition(parts[1]);
+            ChessPosition to = parsePosition(parts[2]);
+
+            ChessMove move = new ChessMove(from, to, null); // No promotion support yet
+            MakeMoveCommand cmd = new MakeMoveCommand(context.authToken, context.gameID, move);
+            context.socket.send(cmd);
+            System.out.println("Move sent: " + parts[1] + " to " + parts[2]);
+
+        } catch (Exception e) {
+            System.out.println("Invalid move input. Format should be like: move e2 e4");
+        }
+    }
+
+    private ChessPosition parsePosition(String text) {
+        text = text.toLowerCase();
+        if (text.length() != 2) throw new IllegalArgumentException("Invalid position: " + text);
+
+        char colChar = text.charAt(0);
+        char rowChar = text.charAt(1);
+
+        int col = colChar - 'a' + 1;
+        int row = Character.getNumericValue(rowChar);
+
+        if (col < 1 || col > 8 || row < 1 || row > 8) {
+            throw new IllegalArgumentException("Invalid board position: " + text);
+        }
+
+        return new ChessPosition(row, col);
+    }
+
     private void drawChessBoard(boolean whitePerspective) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
@@ -320,5 +373,26 @@ public class Main {
         String name;
         String whitePlayer;
         String blackPlayer;
+    }
+
+    static class GameplayContext {
+        String authToken;
+        int gameID;
+        ChessGame.TeamColor playerColor; // null for observer
+        ChessGame game;
+        ClientWebSocket socket;
+
+        public GameplayContext(String authToken, int gameID, ChessGame.TeamColor playerColor,
+                               ChessGame game, ClientWebSocket socket) {
+            this.authToken = authToken;
+            this.gameID = gameID;
+            this.playerColor = playerColor;
+            this.game = game;
+            this.socket = socket;
+        }
+
+        public boolean isWhitePerspective() {
+            return playerColor != ChessGame.TeamColor.BLACK;
+        }
     }
 }
