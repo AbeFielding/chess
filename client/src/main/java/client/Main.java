@@ -221,7 +221,12 @@ public class Main {
         try {
             server.joinGame(authData.authToken(), gameId, color);
             System.out.printf("Joined game '%s' as %s player.%n", lastGameList[index].name, color);
-            drawChessBoard(color.equals("white"));
+            ChessGame game = new ChessGame();
+            ClientWebSocket socket = new ClientWebSocket(game);
+            socket.connect(authData.authToken(), gameId, ChessGame.TeamColor.valueOf(color.toUpperCase()));
+            GameplayContext context = new GameplayContext(authData.authToken(), gameId,
+                    ChessGame.TeamColor.valueOf(color.toUpperCase()), game, socket);
+            runGameplayUI(context);
         } catch (Exception e) {
             System.out.println("An error occurred while joining the game. Please try again.");
             System.out.println("Server message: " + e.getMessage());
@@ -251,7 +256,11 @@ public class Main {
         try {
             server.observeGame(authData.authToken(), gameId);
             System.out.printf("Now observing game '%s'.%n", lastGameList[index].name);
-            drawChessBoard(true);
+            ChessGame game = new ChessGame();
+            ClientWebSocket socket = new ClientWebSocket(game);
+            socket.connect(authData.authToken(), gameId, null);
+            GameplayContext context = new GameplayContext(authData.authToken(), gameId, null, game, socket);
+            runGameplayUI(context);
         } catch (Exception e) {
             System.out.println("An error occurred while observing the game. Please try again.");
             System.out.println("Server message: " + e.getMessage());
@@ -337,8 +346,8 @@ public class Main {
         System.out.println("""
         Commands:
         help           - Show available commands
-        move e2 e4     - Make a move
-        highlight e2   - Show legal moves for a piece
+        move           - Make a move
+        highlight      - Show legal moves for a piece
         redraw         - Redraw the board
         resign         - Resign from the game
         leave          - Leave the game and return to lobby

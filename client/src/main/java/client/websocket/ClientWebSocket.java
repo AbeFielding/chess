@@ -15,6 +15,7 @@ public class ClientWebSocket {
     private Session session;
     private final Gson gson = new Gson();
     private final ChessGame game;
+    private boolean gameOver = false;
 
     public ClientWebSocket(ChessGame game) {
         this.game = game;
@@ -26,13 +27,19 @@ public class ClientWebSocket {
         container.connectToServer(this, uri);
 
         UserGameCommand connectCmd = new UserGameCommand(CommandType.CONNECT, authToken, gameID);
-
         this.send(connectCmd);
     }
 
     public void send(UserGameCommand cmd) {
         if (session != null && session.isOpen()) {
             String json = gson.toJson(cmd);
+            session.getAsyncRemote().sendText(json);
+        }
+    }
+
+    public void send(MakeMoveCommand moveCmd) {
+        if (session != null && session.isOpen()) {
+            String json = gson.toJson(moveCmd);
             session.getAsyncRemote().sendText(json);
         }
     }
@@ -51,6 +58,12 @@ public class ClientWebSocket {
                 LoadGameMessage load = gson.fromJson(message, LoadGameMessage.class);
                 game.copyFrom(load.getGame());
                 System.out.println("\n[Game updated]");
+
+                // Check for game over
+                if (load.getGame().isInCheckmate(game.getTeamTurn()) ||
+                        load.getGame().isInStalemate(game.getTeamTurn())) {
+                    gameOver = true;
+                }
             }
             case NOTIFICATION -> {
                 NotificationMessage note = gson.fromJson(message, NotificationMessage.class);
@@ -83,10 +96,11 @@ public class ClientWebSocket {
         }
     }
 
-    public void send(MakeMoveCommand moveCmd) {
-        if (session != null && session.isOpen()) {
-            String json = gson.toJson(moveCmd);
-            session.getAsyncRemote().sendText(json);
-        }
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public ChessGame getGame() {
+        return game;
     }
 }
