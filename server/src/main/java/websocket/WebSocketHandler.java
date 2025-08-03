@@ -217,9 +217,32 @@ public class WebSocketHandler {
     }
 
     private void handleLeave(Session session, UserGameCommand command) {
-        gameSessions.getOrDefault(command.getGameID(), Set.of()).remove(session);
-        userSessions.remove(session);
-        // TODO: notify other players
+        try {
+            AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
+            UserDAO userDAO = new UserMySQLDAO();
+
+            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
+            if (token == null) {
+                sendError(session, "Error: Invalid auth token");
+                return;
+            }
+
+            int userId = token.getUserId();
+            String username = userDAO.getUserById(userId).getUsername();
+            int gameID = command.getGameID();
+
+            userSessions.remove(session);
+            gameSessions.getOrDefault(gameID, Set.of()).remove(session);
+
+            String message = username + " left the game.";
+            broadcastToGame(gameID, gson.toJson(new NotificationMessage(message)), Set.of());
+
+            System.out.println("👋 " + message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError(session, "Error: Failed to leave game - " + e.getMessage());
+        }
     }
 
     private void handleResign(Session session, UserGameCommand command) {
