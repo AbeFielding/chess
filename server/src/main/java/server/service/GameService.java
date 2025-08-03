@@ -53,7 +53,6 @@ public class GameService {
         }
 
         String color = playerColor.trim().toUpperCase();
-
         if (color.equals("OBSERVER")) {
             return;
         }
@@ -65,27 +64,33 @@ public class GameService {
         int userId = userDAO.getUserByUsername(username).getId();
 
         if (color.equals("WHITE")) {
-            if (game.getWhiteUserId() != null && !game.getWhiteUserId().equals(userId)) {
+            Integer currentWhite = game.getWhiteUserId();
+            if (currentWhite != null && !currentWhite.equals(userId)) {
                 throw new Exception("Color already taken");
             }
-            String sql = "UPDATE games SET white_user_id = ? WHERE id = ?";
-            try (var conn = dataaccess.DatabaseManager.getConnection();
-                 var ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, gameID);
-                ps.executeUpdate();
+            if (currentWhite == null) {
+                updatePlayerSlot("white_user_id", userId, gameID);
             }
         } else if (color.equals("BLACK")) {
-            if (game.getBlackUserId() != null && !game.getBlackUserId().equals(userId)) {
+            Integer currentBlack = game.getBlackUserId();
+            if (currentBlack != null && !currentBlack.equals(userId)) {
                 throw new Exception("Color already taken");
             }
-            String sql = "UPDATE games SET black_user_id = ? WHERE id = ?";
-            try (var conn = dataaccess.DatabaseManager.getConnection();
-                 var ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, gameID);
-                ps.executeUpdate();
+            if (currentBlack == null) {
+                updatePlayerSlot("black_user_id", userId, gameID);
             }
+        }
+    }
+
+    private void updatePlayerSlot(String column, int userId, int gameID) throws DataAccessException {
+        String sql = "UPDATE games SET " + column + " = ? WHERE id = ?";
+        try (var conn = dataaccess.DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, gameID);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to update player slot", e);
         }
     }
 

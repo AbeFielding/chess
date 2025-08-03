@@ -236,6 +236,7 @@ public class WebSocketHandler {
         try {
             AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
             UserDAO userDAO = new UserMySQLDAO();
+            GameDAO gameDAO = new GameMySQLDAO();
 
             AuthToken token = authTokenDAO.getToken(command.getAuthToken());
             if (token == null) {
@@ -250,16 +251,39 @@ public class WebSocketHandler {
             userSessions.remove(session);
             gameSessions.getOrDefault(gameID, Set.of()).remove(session);
 
-            String message = username + " left the game.";
-            broadcastToGame(gameID, gson.toJson(new NotificationMessage(message)), Set.of());
+            Game game = gameDAO.getGameById(gameID);
+            if (game != null) {
+                boolean updated = false;
+                if (Objects.equals(game.getWhiteUserId(), userId)) {
+                    clearColorSlot("white_user_id", gameID);
+                    updated = true;
+                } else if (Objects.equals(game.getBlackUserId(), userId)) {
+                    clearColorSlot("black_user_id", gameID);
+                    updated = true;
+                }
 
-            System.out.println("👋 " + message);
+                String message = username + " left the game.";
+                System.out.println("👋 " + message);
+                broadcastToGame(gameID, gson.toJson(new NotificationMessage(message)), Set.of());
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
             sendError(session, "Error: Failed to leave game - " + e.getMessage());
         }
     }
+
+    private void clearColorSlot(String column, int gameID) throws DataAccessException {
+        String sql = "UPDATE games SET " + column + " = NULL WHERE id = ?";
+        try (var conn = dataaccess.DatabaseManager.getConnection();
+             var ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, gameID);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new DataAccessException("Failed to clear color slot", e);
+        }
+    }
+
 
     private void handleResign(Session session, UserGameCommand command) {
         try {
@@ -284,22 +308,29 @@ public class WebSocketHandler {
             }
 
             if (game.isFinished()) {
-                sendError(session, "Error: Game already finished");
+                sendError(session, "Error: Game is already over");
                 return;
             }
 
-            gameDAO.updateGameState(gameID, game.getState(), true);
+            boolean isWhite = game.getWhiteUserId() != null && userId == game.getWhiteUserId();
+            boolean isBlack = game.getBlackUserId() != null && userId == game.getBlackUserId();
+
+            if (!isWhite && !isBlack) {
+                sendError(session, "Error: Only players can resign");
+                return;
+            }
+
+            gameDAO.updateGameState(game.getId(), game.getState(), true); // mark game finished
 
             String message = username + " resigned. Game over.";
             broadcastToGame(gameID, gson.toJson(new NotificationMessage(message)), Set.of());
-
-            System.out.println("🏳️ " + message);
 
         } catch (Exception e) {
             e.printStackTrace();
             sendError(session, "Error: Failed to resign - " + e.getMessage());
         }
     }
+
 
     private void broadcastToGame(int gameID, String json, Set<Session> skipSessions) {
         for (Session s : gameSessions.getOrDefault(gameID, Set.of())) {

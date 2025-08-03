@@ -30,6 +30,14 @@ public class Game {
         this.state = state;
     }
 
+    public void setWhiteUserId(Integer whiteUserId) {
+        this.whiteUserId = whiteUserId;
+    }
+
+    public void setBlackUserId(Integer blackUserId) {
+        this.blackUserId = blackUserId;
+    }
+
     public int getId() { return id; }
     public String getState() { return state; }
     public boolean isFinished() { return finished; }
