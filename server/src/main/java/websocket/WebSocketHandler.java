@@ -20,11 +20,11 @@ import java.util.*;
 @WebSocket
 public class WebSocketHandler {
 
-    private static final Gson gson = new Gson();
+    private static final Gson GSON = new Gson();
 
-    private static final Map<Integer, Set<Session>> gameSessions = new HashMap<>();
+    private static final Map<Integer, Set<Session>> GAME_SESSIONS = new HashMap<>();
 
-    private static final Map<Session, String> userSessions = new HashMap<>();
+    private static final Map<Session, String> USER_SESSIONS = new HashMap<>();
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
@@ -34,8 +34,8 @@ public class WebSocketHandler {
     @OnWebSocketClose
     public void onClose(Session session, int statusCode, String reason) {
         System.out.println("Client disconnected: " + session);
-        userSessions.remove(session);
-        for (Set<Session> sessions : gameSessions.values()) {
+        USER_SESSIONS.remove(session);
+        for (Set<Session> sessions : GAME_SESSIONS.values()) {
             sessions.remove(session);
         }
     }
@@ -48,13 +48,13 @@ public class WebSocketHandler {
     @OnWebSocketMessage
     public void onMessage(Session session, String message) {
         try {
-            UserGameCommand command = gson.fromJson(message, UserGameCommand.class);
+            UserGameCommand command = GSON.fromJson(message, UserGameCommand.class);
             switch (command.getCommandType()) {
                 case CONNECT:
                     handleConnect(session, command);
                     break;
                 case MAKE_MOVE:
-                    MakeMoveCommand moveCommand = gson.fromJson(message, MakeMoveCommand.class);
+                    MakeMoveCommand moveCommand = GSON.fromJson(message, MakeMoveCommand.class);
                     handleMakeMove(session, moveCommand);
                     break;
                 case LEAVE:
@@ -97,21 +97,21 @@ public class WebSocketHandler {
                 return;
             }
 
-            userSessions.put(session, username);
-            gameSessions.computeIfAbsent(gameID, k -> new HashSet<>()).add(session);
+            USER_SESSIONS.put(session, username);
+            GAME_SESSIONS.computeIfAbsent(gameID, k -> new HashSet<>()).add(session);
 
             String whiteUsername = getUsernameFromUserId(game.getWhiteUserId(), userDAO);
             String blackUsername = getUsernameFromUserId(game.getBlackUserId(), userDAO);
 
-            ChessGame chessGame = gson.fromJson(game.getState(), ChessGame.class);
+            ChessGame chessGame = GSON.fromJson(game.getState(), ChessGame.class);
 
             LoadGameMessage loadMsg = new LoadGameMessage(chessGame);
-            session.getRemote().sendString(gson.toJson(loadMsg));
+            session.getRemote().sendString(GSON.toJson(loadMsg));
 
             String role = getRole(username, whiteUsername, blackUsername);
             String msg = username + " joined the game as " + role;
             NotificationMessage notify = new NotificationMessage(msg);
-            broadcastToGame(gameID, gson.toJson(notify), except(session));
+            broadcastToGame(gameID, GSON.toJson(notify), except(session));
 
             System.out.println("✅ " + msg);
 
@@ -123,14 +123,20 @@ public class WebSocketHandler {
 
 
     private String getUsernameFromUserId(Integer userId, UserDAO userDAO) throws DataAccessException {
-        if (userId == null) return null;
+        if (userId == null) {
+            return null;
+        }
         User user = userDAO.getUserById(userId);
-        return user != null ? user.getUsername() : null;
+        return (user != null) ? user.getUsername() : null;
     }
 
     private String getRole(String username, String white, String black) {
-        if (username.equals(white)) return "White";
-        if (username.equals(black)) return "Black";
+        if (username.equals(white)) {
+            return "White";
+        }
+        if (username.equals(black)) {
+            return "Black";
+        }
         return "Observer";
     }
 
@@ -161,14 +167,14 @@ public class WebSocketHandler {
                 return;
             }
 
-            ChessGame chessGame = gson.fromJson(game.getState(), ChessGame.class);
+            ChessGame chessGame = GSON.fromJson(game.getState(), ChessGame.class);
 
             String whiteUsername = getUsernameFromUserId(game.getWhiteUserId(), userDAO);
             String blackUsername = getUsernameFromUserId(game.getBlackUserId(), userDAO);
 
             boolean isWhite = username.equals(whiteUsername);
             boolean isBlack = username.equals(blackUsername);
-            ChessGame.TeamColor playerColor = isWhite ? ChessGame.TeamColor.WHITE : isBlack ? ChessGame.TeamColor.BLACK : null;
+            ChessGame.TeamColor playerColor = isWhite ? ChessGame.TeamColor.WHITE : (isBlack ? ChessGame.TeamColor.BLACK : null);
 
             if ((chessGame.getTeamTurn() == ChessGame.TeamColor.WHITE && !isWhite) ||
                     (chessGame.getTeamTurn() == ChessGame.TeamColor.BLACK && !isBlack)) {
@@ -177,7 +183,7 @@ public class WebSocketHandler {
             }
 
             chessGame.makeMove(command.getMove());
-            String newStateJson = gson.toJson(chessGame);
+            String newStateJson = GSON.toJson(chessGame);
             game.setState(newStateJson);
             gameDAO.updateGameState(game.getId(), newStateJson, false);
 
@@ -185,18 +191,18 @@ public class WebSocketHandler {
             String moveSummary = username + " moved " + command.getMove();
             NotificationMessage notification = new NotificationMessage(moveSummary);
 
-            Set<Session> allSessions = gameSessions.getOrDefault(gameID, Set.of());
+            Set<Session> allSessions = GAME_SESSIONS.getOrDefault(gameID, Set.of());
             Set<Session> otherSessions = new HashSet<>(allSessions);
             otherSessions.remove(session);
 
             if (session.isOpen()) {
-                session.getRemote().sendString(gson.toJson(load));
+                session.getRemote().sendString(GSON.toJson(load));
             }
 
             for (Session s : otherSessions) {
                 if (s.isOpen()) {
-                    s.getRemote().sendString(gson.toJson(load));
-                    s.getRemote().sendString(gson.toJson(notification));
+                    s.getRemote().sendString(GSON.toJson(load));
+                    s.getRemote().sendString(GSON.toJson(notification));
                 }
             }
 
@@ -206,9 +212,9 @@ public class WebSocketHandler {
 
             if (chessGame.isInCheckmate(opponent)) {
                 gameDAO.updateGameState(game.getId(), newStateJson, true);
-                broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in checkmate! Game Over")), Set.of());
+                broadcastToGame(gameID, GSON.toJson(new NotificationMessage(opponent + " is in checkmate! Game Over")), Set.of());
             } else if (chessGame.isInCheck(opponent)) {
-                broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in check.")), Set.of());
+                broadcastToGame(gameID, GSON.toJson(new NotificationMessage(opponent + " is in check.")), Set.of());
             }
 
         } catch (InvalidMoveException e) {
@@ -235,8 +241,8 @@ public class WebSocketHandler {
             String username = userDAO.getUserById(userId).getUsername();
             int gameID = command.getGameID();
 
-            userSessions.remove(session);
-            gameSessions.getOrDefault(gameID, Set.of()).remove(session);
+            USER_SESSIONS.remove(session);
+            GAME_SESSIONS.getOrDefault(gameID, Set.of()).remove(session);
 
             Game game = gameDAO.getGameById(gameID);
             if (game != null) {
@@ -251,7 +257,7 @@ public class WebSocketHandler {
 
                 String message = username + " left the game.";
                 System.out.println("👋 " + message);
-                broadcastToGame(gameID, gson.toJson(new NotificationMessage(message)), Set.of());
+                broadcastToGame(gameID, GSON.toJson(new NotificationMessage(message)), Set.of());
             }
 
         } catch (Exception e) {
@@ -299,8 +305,8 @@ public class WebSocketHandler {
                 return;
             }
 
-            boolean isWhite = game.getWhiteUserId() != null && userId == game.getWhiteUserId();
-            boolean isBlack = game.getBlackUserId() != null && userId == game.getBlackUserId();
+            boolean isWhite = (game.getWhiteUserId() != null) && (userId == game.getWhiteUserId());
+            boolean isBlack = (game.getBlackUserId() != null) && (userId == game.getBlackUserId());
 
             if (!isWhite && !isBlack) {
                 sendError(session, "Error: Only players can resign");
@@ -310,7 +316,7 @@ public class WebSocketHandler {
             gameDAO.updateGameState(game.getId(), game.getState(), true); // mark game finished
 
             String message = username + " resigned. Game over.";
-            broadcastToGame(gameID, gson.toJson(new NotificationMessage(message)), Set.of());
+            broadcastToGame(gameID, GSON.toJson(new NotificationMessage(message)), Set.of());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -320,7 +326,7 @@ public class WebSocketHandler {
 
 
     private void broadcastToGame(int gameID, String json, Set<Session> skipSessions) {
-        for (Session s : gameSessions.getOrDefault(gameID, Set.of())) {
+        for (Session s : GAME_SESSIONS.getOrDefault(gameID, Set.of())) {
             if (!skipSessions.contains(s) && s.isOpen()) {
                 try {
                     s.getRemote().sendString(json);
@@ -338,9 +344,38 @@ public class WebSocketHandler {
     private void sendError(Session session, String errorMsg) {
         try {
             ErrorMessage error = new ErrorMessage(errorMsg);
-            session.getRemote().sendString(gson.toJson(error));
+            session.getRemote().sendString(GSON.toJson(error));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+    private AuthToken requireValidToken(String authTokenStr, Session session) throws IOException, DataAccessException {
+        AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
+        AuthToken token = authTokenDAO.getToken(authTokenStr);
+        if (token == null) {
+            sendError(session, "Error: Invalid auth token");
+            return null;
+        }
+        return token;
+    }
+
+    private Game requireValidGame(int gameID, Session session, GameDAO gameDAO) throws IOException, DataAccessException {
+        Game game = gameDAO.getGameById(gameID);
+        if (game == null) {
+            sendError(session, "Error: Game not found");
+            return null;
+        }
+        return game;
+    }
+
+    private String requireValidUsername(int userId, Session session, UserDAO userDAO) throws IOException, DataAccessException {
+        User user = userDAO.getUserById(userId);
+        if (user == null) {
+            sendError(session, "Error: User not found");
+            return null;
+        }
+        return user.getUsername();
+    }
+
 }

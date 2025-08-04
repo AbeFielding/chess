@@ -212,14 +212,12 @@ public class Main {
             return;
         }
         int gameId = lastGameList[index].gameId;
-
         System.out.print("Enter color to play (white/black): ");
         String color = scanner.nextLine().trim().toLowerCase();
         if (!color.equals("white") && !color.equals("black")) {
             System.out.println("Invalid color. Please enter 'white' or 'black'.");
             return;
         }
-
         try {
             server.joinGame(authData.authToken(), gameId, color);
             System.out.printf("Joined game '%s' as %s player.%n", lastGameList[index].name, color);
@@ -234,7 +232,6 @@ public class Main {
             System.out.println("Server message: " + e.getMessage());
         }
     }
-
     private void handleObserveGame() {
         if (lastGameList.length == 0) {
             System.out.println("You must list games first.");
@@ -254,7 +251,6 @@ public class Main {
             return;
         }
         int gameId = lastGameList[index].gameId;
-
         try {
             server.observeGame(authData.authToken(), gameId);
             System.out.printf("Now observing game '%s'.%n", lastGameList[index].name);
@@ -268,61 +264,49 @@ public class Main {
             System.out.println("Server message: " + e.getMessage());
         }
     }
-
     private void handleMove(String input, GameplayContext context) {
         if (context.playerColor == null) {
             System.out.println("Observers cannot make moves.");
             return;
         }
-
         if (context.game == null) {
             System.out.println("Game not loaded.");
             return;
         }
-
         if (context.socket.isGameOver()) {
             System.out.println("The game is over. You cannot make any more moves.");
             return;
         }
-
         String[] parts = input.trim().split("\\s+");
         if (parts.length < 3) {
             System.out.println("Usage: move e2 e4");
             return;
         }
-
         try {
             ChessPosition from = parsePosition(parts[1]);
             ChessPosition to = parsePosition(parts[2]);
-
             ChessMove move = new ChessMove(from, to, null);
             MakeMoveCommand cmd = new MakeMoveCommand(context.authToken, context.gameID, move);
             context.socket.send(cmd);
             System.out.println("Move sent: " + parts[1] + " to " + parts[2]);
-
         } catch (Exception e) {
             System.out.println("Invalid move input. Format should be like: move e2 e4");
         }
     }
-
-
     private ChessPosition parsePosition(String text) {
         text = text.toLowerCase();
-        if (text.length() != 2) throw new IllegalArgumentException("Invalid position: " + text);
-
+        if (text.length() != 2) {
+            throw new IllegalArgumentException("Invalid position: " + text);
+        }
         char colChar = text.charAt(0);
         char rowChar = text.charAt(1);
-
         int col = colChar - 'a' + 1;
         int row = Character.getNumericValue(rowChar);
-
         if (col < 1 || col > 8 || row < 1 || row > 8) {
             throw new IllegalArgumentException("Invalid board position: " + text);
         }
-
         return new ChessPosition(row, col);
     }
-
     private void runGameplayUI(GameplayContext context) {
         System.out.println("Type 'help' to see available gameplay commands.");
         while (!context.socket.isGameLoaded()) {
@@ -330,13 +314,10 @@ public class Main {
                 Thread.sleep(50);
             } catch (InterruptedException ignored) {}
         }
-
         drawChessBoard(context.game, context.isWhitePerspective(), null, null);
-
         while (true) {
             System.out.print("(game)> ");
             String input = scanner.nextLine().trim();
-
             if (input.equalsIgnoreCase("help")) {
                 printGameplayHelp();
             } else if (input.equalsIgnoreCase("redraw")) {
@@ -355,7 +336,6 @@ public class Main {
             }
         }
     }
-
     private void printGameplayHelp() {
         System.out.println("""
         Commands:
@@ -367,7 +347,6 @@ public class Main {
         leave          - Leave the game and return to lobby
     """);
     }
-
     private void leaveGame(GameplayContext context) {
         context.socket.send(new websocket.commands.UserGameCommand(
                 websocket.commands.UserGameCommand.CommandType.LEAVE,
@@ -377,7 +356,6 @@ public class Main {
         context.socket.close();
         System.out.println("Left game.");
     }
-
     private void resignGame(GameplayContext context) {
         System.out.print("Are you sure you want to resign? (y/n): ");
         String confirm = scanner.nextLine().trim().toLowerCase();
@@ -392,14 +370,12 @@ public class Main {
             System.out.println("Canceled resignation.");
         }
     }
-
     private void handleHighlight(String input, GameplayContext context) {
         String[] parts = input.trim().split("\\s+");
         if (parts.length != 2) {
             System.out.println("Usage: highlight e2");
             return;
         }
-
         try {
             ChessPosition from = parsePosition(parts[1]);
             ChessPiece piece = context.game.getBoard().getPiece(from);
@@ -407,30 +383,24 @@ public class Main {
                 System.out.println("No piece at that position.");
                 return;
             }
-
             Collection<ChessMove> moves = context.game.validMoves(from);
             if (moves.isEmpty()) {
                 System.out.println("No legal moves for that piece.");
                 return;
             }
-
             Set<ChessPosition> targets = new HashSet<>();
             for (ChessMove move : moves) {
                 targets.add(move.getEndPosition());
             }
-
             drawChessBoard(context.game, context.isWhitePerspective(), targets, from);
-
         } catch (Exception e) {
             System.out.println("Invalid input. Try: highlight e2");
         }
     }
-
     private String formatPosition(ChessPosition pos) {
         char col = (char) ('a' + pos.getColumn() - 1);
         return "" + col + pos.getRow();
     }
-
     private void drawChessBoard(ChessGame game, boolean whitePerspective, Set<ChessPosition> highlights, ChessPosition selected) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
@@ -442,26 +412,22 @@ public class Main {
         final String blackFg = "\u001B[38;5;0m";
         final String borderBg = "\u001B[48;5;236m";
         final String borderFg = "\u001B[38;5;15m";
-
         char[] columns = whitePerspective ? "abcdefgh".toCharArray() : "hgfedcba".toCharArray();
         System.out.print(borderBg + borderFg + "   ");
         for (char c : columns) {
             System.out.print(" " + c + " ");
         }
         System.out.println(" " + reset);
-
         for (int i = 0; i < 8; i++) {
             int rowIdx = whitePerspective ? 8 - i : i + 1;
             int boardRow = whitePerspective ? 7 - i : i;
             System.out.print(borderBg + borderFg + " " + rowIdx + " " + reset);
-
             for (int j = 0; j < 8; j++) {
                 int boardCol = whitePerspective ? j : 7 - j;
                 int gameRow = boardRow + 1;
                 int gameCol = boardCol + 1;
                 ChessPosition pos = new ChessPosition(gameRow, gameCol);
                 ChessPiece piece = game.getBoard().getPiece(pos);
-
                 String symbol = " ";
                 if (piece != null) {
                     symbol = switch (piece.getPieceType()) {
@@ -476,53 +442,40 @@ public class Main {
                         symbol = symbol.toLowerCase();
                     }
                 }
-
                 boolean isLight = (boardRow + boardCol) % 2 == 0;
                 boolean isHighlight = highlights != null && highlights.contains(pos);
                 boolean isSelected = selected != null && selected.equals(pos);
-
                 String bg = isSelected ? selectedHighlight :
                         isHighlight ? (isLight ? lightHighlight : darkHighlight) :
                                 isLight ? lightBg : darkBg;
-
                 String fg = symbol.equals(" ") ? "" :
                         Character.isUpperCase(symbol.charAt(0)) ? whiteFg : blackFg;
-
                 System.out.print(bg + fg + " " + symbol + " " + reset);
             }
-
             System.out.println(borderBg + borderFg + " " + rowIdx + " " + reset);
         }
-
         System.out.print(borderBg + borderFg + "   ");
         for (char c : columns) {
             System.out.print(" " + c + " ");
         }
         System.out.println(" " + reset);
     }
-
-
     private volatile boolean gameLoaded = false;
-
     public boolean isGameLoaded() {
         return gameLoaded;
     }
-
-
     static class GameSummary {
         int gameId;
         String name;
         String whitePlayer;
         String blackPlayer;
     }
-
     static class GameplayContext {
         String authToken;
         int gameID;
         ChessGame.TeamColor playerColor;
         ChessGame game;
         ClientWebSocket socket;
-
         public GameplayContext(String authToken, int gameID, ChessGame.TeamColor playerColor,
                                ChessGame game, ClientWebSocket socket) {
             this.authToken = authToken;
@@ -531,7 +484,6 @@ public class Main {
             this.game = game;
             this.socket = socket;
         }
-
         public boolean isWhitePerspective() {
             return playerColor != ChessGame.TeamColor.BLACK;
         }

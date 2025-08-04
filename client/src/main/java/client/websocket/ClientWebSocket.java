@@ -76,15 +76,7 @@ public class ClientWebSocket {
         }
     }
 
-    @OnClose
-    public void onClose(Session session, CloseReason reason) {
-        System.out.println("[WebSocket] Disconnected: " + reason);
-    }
 
-    @OnError
-    public void onError(Session session, Throwable throwable) {
-        System.out.println("[WebSocket] Error: " + throwable.getMessage());
-    }
 
     public void close() {
         try {
