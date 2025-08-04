@@ -251,8 +251,20 @@ public class ChessGame {
     }
 
     public void copyFrom(ChessGame updated) {
-        this.board = updated.getBoard();
         this.currentTurn = updated.getTeamTurn();
+
+        ChessBoard copiedBoard = new ChessBoard();
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition pos = new ChessPosition(row, col);
+                ChessPiece originalPiece = updated.getBoard().getPiece(pos);
+                if (originalPiece != null) {
+                    copiedBoard.addPiece(pos, new ChessPiece(originalPiece.getTeamColor(), originalPiece.getPieceType()));
+                }
+            }
+        }
+
+        this.board = copiedBoard;
     }
 
     @Override

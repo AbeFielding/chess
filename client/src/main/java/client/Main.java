@@ -279,6 +279,11 @@ public class Main {
             return;
         }
 
+        if (context.socket.isGameOver()) {
+            System.out.println("The game is over. You cannot make any more moves.");
+            return;
+        }
+
         String[] parts = input.trim().split("\\s+");
         if (parts.length < 3) {
             System.out.println("Usage: move e2 e4");
@@ -289,7 +294,7 @@ public class Main {
             ChessPosition from = parsePosition(parts[1]);
             ChessPosition to = parsePosition(parts[2]);
 
-            ChessMove move = new ChessMove(from, to, null); // No promotion support yet
+            ChessMove move = new ChessMove(from, to, null);
             MakeMoveCommand cmd = new MakeMoveCommand(context.authToken, context.gameID, move);
             context.socket.send(cmd);
             System.out.println("Move sent: " + parts[1] + " to " + parts[2]);
@@ -298,6 +303,7 @@ public class Main {
             System.out.println("Invalid move input. Format should be like: move e2 e4");
         }
     }
+
 
     private ChessPosition parsePosition(String text) {
         text = text.toLowerCase();
@@ -318,6 +324,12 @@ public class Main {
 
     private void runGameplayUI(GameplayContext context) {
         System.out.println("Type 'help' to see available gameplay commands.");
+        while (!context.socket.isGameLoaded()) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ignored) {}
+        }
+
         drawChessBoard(context.game, context.isWhitePerspective());
 
         while (true) {
@@ -434,7 +446,7 @@ public class Main {
 
         for (int i = 0; i < 8; i++) {
             int rowIdx = whitePerspective ? 8 - i : i + 1;
-            int boardRow = whitePerspective ? i : 7 - i;
+            int boardRow = whitePerspective ? 7 - i : i;
             System.out.print(borderBg + borderFg + " " + rowIdx + " " + reset);
 
             for (int j = 0; j < 8; j++) {
@@ -476,7 +488,11 @@ public class Main {
         System.out.println(" " + reset);
     }
 
+    private volatile boolean gameLoaded = false;
 
+    public boolean isGameLoaded() {
+        return gameLoaded;
+    }
 
 
     static class GameSummary {

@@ -57,9 +57,9 @@ public class ClientWebSocket {
             case LOAD_GAME -> {
                 LoadGameMessage load = gson.fromJson(message, LoadGameMessage.class);
                 game.copyFrom(load.getGame());
+                gameLoaded = true;
                 System.out.println("\n[Game updated]");
 
-                // Check for game over
                 if (load.getGame().isInCheckmate(game.getTeamTurn()) ||
                         load.getGame().isInStalemate(game.getTeamTurn())) {
                     gameOver = true;
@@ -103,4 +103,11 @@ public class ClientWebSocket {
     public ChessGame getGame() {
         return game;
     }
+
+    private volatile boolean gameLoaded = false;
+
+    public boolean isGameLoaded() {
+        return gameLoaded;
+    }
+
 }

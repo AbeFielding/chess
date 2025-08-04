@@ -50,4 +50,12 @@ public class ChessPosition {
     public int hashCode() {
         return Objects.hash(row, col);
     }
+
+    @Override
+    public String toString() {
+        char colChar = (char) ('a' + getColumn() - 1);
+        return "" + colChar + getRow();
+    }
+
+
 }

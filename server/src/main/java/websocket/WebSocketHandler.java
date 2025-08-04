@@ -168,7 +168,7 @@ public class WebSocketHandler {
 
             boolean isWhite = username.equals(whiteUsername);
             boolean isBlack = username.equals(blackUsername);
-            ChessGame.TeamColor playerColor = isWhite ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+            ChessGame.TeamColor playerColor = isWhite ? ChessGame.TeamColor.WHITE : isBlack ? ChessGame.TeamColor.BLACK : null;
 
             if ((chessGame.getTeamTurn() == ChessGame.TeamColor.WHITE && !isWhite) ||
                     (chessGame.getTeamTurn() == ChessGame.TeamColor.BLACK && !isBlack)) {
