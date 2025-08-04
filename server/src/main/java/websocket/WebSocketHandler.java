@@ -350,32 +350,4 @@ public class WebSocketHandler {
         }
     }
 
-    private AuthToken requireValidToken(String authTokenStr, Session session) throws IOException, DataAccessException {
-        AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
-        AuthToken token = authTokenDAO.getToken(authTokenStr);
-        if (token == null) {
-            sendError(session, "Error: Invalid auth token");
-            return null;
-        }
-        return token;
-    }
-
-    private Game requireValidGame(int gameID, Session session, GameDAO gameDAO) throws IOException, DataAccessException {
-        Game game = gameDAO.getGameById(gameID);
-        if (game == null) {
-            sendError(session, "Error: Game not found");
-            return null;
-        }
-        return game;
-    }
-
-    private String requireValidUsername(int userId, Session session, UserDAO userDAO) throws IOException, DataAccessException {
-        User user = userDAO.getUserById(userId);
-        if (user == null) {
-            sendError(session, "Error: User not found");
-            return null;
-        }
-        return user.getUsername();
-    }
-
 }
