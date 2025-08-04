@@ -75,22 +75,12 @@ public class WebSocketHandler {
             GameDAO gameDAO = new GameMySQLDAO();
             UserDAO userDAO = new UserMySQLDAO();
 
-            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
-            if (token == null) {
-                sendError(session, "Error: Invalid auth token");
+            String username = validateAndGetUsername(session, command, authTokenDAO, userDAO);
+            if (username == null) {
                 return;
             }
 
-            int userId = token.getUserId();
-            User user = userDAO.getUserById(userId);
-            if (user == null) {
-                sendError(session, "Error: User not found");
-                return;
-            }
-
-            String username = user.getUsername();
             int gameID = command.getGameID();
-
             Game game = gameDAO.getGameById(gameID);
             if (game == null) {
                 sendError(session, "Error: Game not found");
@@ -114,12 +104,12 @@ public class WebSocketHandler {
             broadcastToGame(gameID, GSON.toJson(notify), except(session));
 
             System.out.println("✅ " + msg);
-
         } catch (Exception e) {
             e.printStackTrace();
             sendError(session, "Error: Failed to connect: " + e.getMessage());
         }
     }
+
 
 
     private String getUsernameFromUserId(Integer userId, UserDAO userDAO) throws DataAccessException {
@@ -146,16 +136,12 @@ public class WebSocketHandler {
             GameDAO gameDAO = new GameMySQLDAO();
             UserDAO userDAO = new UserMySQLDAO();
 
-            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
-            if (token == null) {
-                sendError(session, "Error: Invalid auth token");
+            String username = validateAndGetUsername(session, command, authTokenDAO, userDAO);
+            if (username == null) {
                 return;
             }
 
-            int userId = token.getUserId();
-            String username = userDAO.getUserById(userId).getUsername();
             int gameID = command.getGameID();
-
             Game game = gameDAO.getGameById(gameID);
             if (game == null) {
                 sendError(session, "Error: Game not found");
@@ -168,7 +154,6 @@ public class WebSocketHandler {
             }
 
             ChessGame chessGame = GSON.fromJson(game.getState(), ChessGame.class);
-
             String whiteUsername = getUsernameFromUserId(game.getWhiteUserId(), userDAO);
             String blackUsername = getUsernameFromUserId(game.getBlackUserId(), userDAO);
 
@@ -225,20 +210,19 @@ public class WebSocketHandler {
         }
     }
 
+
     private void handleLeave(Session session, UserGameCommand command) {
         try {
             AuthTokenDAO authTokenDAO = new AuthTokenMySQLDAO();
             UserDAO userDAO = new UserMySQLDAO();
             GameDAO gameDAO = new GameMySQLDAO();
 
-            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
-            if (token == null) {
-                sendError(session, "Error: Invalid auth token");
+            String username = validateAndGetUsername(session, command, authTokenDAO, userDAO);
+            if (username == null) {
                 return;
             }
 
-            int userId = token.getUserId();
-            String username = userDAO.getUserById(userId).getUsername();
+            int userId = authTokenDAO.getToken(command.getAuthToken()).getUserId();
             int gameID = command.getGameID();
 
             USER_SESSIONS.remove(session);
@@ -266,6 +250,7 @@ public class WebSocketHandler {
         }
     }
 
+
     private void clearColorSlot(String column, int gameID) throws DataAccessException {
         String sql = "UPDATE games SET " + column + " = NULL WHERE id = ?";
         try (var conn = dataaccess.DatabaseManager.getConnection();
@@ -284,14 +269,12 @@ public class WebSocketHandler {
             GameDAO gameDAO = new GameMySQLDAO();
             UserDAO userDAO = new UserMySQLDAO();
 
-            AuthToken token = authTokenDAO.getToken(command.getAuthToken());
-            if (token == null) {
-                sendError(session, "Error: Invalid auth token");
+            String username = validateAndGetUsername(session, command, authTokenDAO, userDAO);
+            if (username == null) {
                 return;
             }
 
-            int userId = token.getUserId();
-            String username = userDAO.getUserById(userId).getUsername();
+            int userId = authTokenDAO.getToken(command.getAuthToken()).getUserId();
             int gameID = command.getGameID();
 
             Game game = gameDAO.getGameById(gameID);
@@ -325,6 +308,7 @@ public class WebSocketHandler {
     }
 
 
+
     private void broadcastToGame(int gameID, String json, Set<Session> skipSessions) {
         for (Session s : GAME_SESSIONS.getOrDefault(gameID, Set.of())) {
             if (!skipSessions.contains(s) && s.isOpen()) {
@@ -348,6 +332,24 @@ public class WebSocketHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private String validateAndGetUsername(Session session, UserGameCommand command,
+                                          AuthTokenDAO authTokenDAO, UserDAO userDAO) throws Exception {
+        AuthToken token = authTokenDAO.getToken(command.getAuthToken());
+        if (token == null) {
+            sendError(session, "Error: Invalid auth token");
+            return null;
+        }
+
+        int userId = token.getUserId();
+        User user = userDAO.getUserById(userId);
+        if (user == null) {
+            sendError(session, "Error: User not found");
+            return null;
+        }
+
+        return user.getUsername();
     }
 
 }
