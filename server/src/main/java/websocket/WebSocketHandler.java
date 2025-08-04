@@ -206,7 +206,7 @@ public class WebSocketHandler {
 
             if (chessGame.isInCheckmate(opponent)) {
                 gameDAO.updateGameState(game.getId(), newStateJson, true);
-                broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in checkmate!")), Set.of());
+                broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in checkmate! Game Over")), Set.of());
             } else if (chessGame.isInCheck(opponent)) {
                 broadcastToGame(gameID, gson.toJson(new NotificationMessage(opponent + " is in check.")), Set.of());
             }

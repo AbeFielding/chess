@@ -3,14 +3,15 @@ package client;
 import java.util.Scanner;
 import com.google.gson.*;
 import client.model.AuthData;
-import java.util.Map;
-import java.util.HashMap;
 import chess.ChessGame;
 import chess.ChessMove;
 import chess.ChessPosition;
 import client.websocket.ClientWebSocket;
 import websocket.commands.MakeMoveCommand;
 import chess.ChessPiece;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
 
 public class Main {
     private enum State { PRELOGIN, POSTLOGIN }
@@ -330,7 +331,7 @@ public class Main {
             } catch (InterruptedException ignored) {}
         }
 
-        drawChessBoard(context.game, context.isWhitePerspective());
+        drawChessBoard(context.game, context.isWhitePerspective(), null, null);
 
         while (true) {
             System.out.print("(game)> ");
@@ -339,7 +340,7 @@ public class Main {
             if (input.equalsIgnoreCase("help")) {
                 printGameplayHelp();
             } else if (input.equalsIgnoreCase("redraw")) {
-                drawChessBoard(context.game, context.isWhitePerspective());
+                drawChessBoard(context.game, context.isWhitePerspective(), null, null);
             } else if (input.equalsIgnoreCase("leave")) {
                 leaveGame(context);
                 return;
@@ -401,22 +402,24 @@ public class Main {
 
         try {
             ChessPosition from = parsePosition(parts[1]);
-            var piece = context.game.getBoard().getPiece(from);
+            ChessPiece piece = context.game.getBoard().getPiece(from);
             if (piece == null) {
                 System.out.println("No piece at that position.");
                 return;
             }
 
-            var moves = context.game.validMoves(from);
+            Collection<ChessMove> moves = context.game.validMoves(from);
             if (moves.isEmpty()) {
                 System.out.println("No legal moves for that piece.");
                 return;
             }
 
-            System.out.println("Legal moves for " + parts[1] + ":");
-            for (var move : moves) {
-                System.out.println("  -> " + formatPosition(move.getEndPosition()));
+            Set<ChessPosition> targets = new HashSet<>();
+            for (ChessMove move : moves) {
+                targets.add(move.getEndPosition());
             }
+
+            drawChessBoard(context.game, context.isWhitePerspective(), targets, from);
 
         } catch (Exception e) {
             System.out.println("Invalid input. Try: highlight e2");
@@ -428,10 +431,13 @@ public class Main {
         return "" + col + pos.getRow();
     }
 
-    private void drawChessBoard(ChessGame game, boolean whitePerspective) {
+    private void drawChessBoard(ChessGame game, boolean whitePerspective, Set<ChessPosition> highlights, ChessPosition selected) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
         final String darkBg = "\u001B[48;5;21m";
+        final String lightHighlight = "\u001B[48;5;120m";
+        final String darkHighlight = "\u001B[48;5;28m";
+        final String selectedHighlight = "\u001B[48;5;226m";
         final String whiteFg = "\u001B[38;5;102m";
         final String blackFg = "\u001B[38;5;0m";
         final String borderBg = "\u001B[48;5;236m";
@@ -453,7 +459,8 @@ public class Main {
                 int boardCol = whitePerspective ? j : 7 - j;
                 int gameRow = boardRow + 1;
                 int gameCol = boardCol + 1;
-                ChessPiece piece = game.getBoard().getPiece(new ChessPosition(gameRow, gameCol));
+                ChessPosition pos = new ChessPosition(gameRow, gameCol);
+                ChessPiece piece = game.getBoard().getPiece(pos);
 
                 String symbol = " ";
                 if (piece != null) {
@@ -471,7 +478,13 @@ public class Main {
                 }
 
                 boolean isLight = (boardRow + boardCol) % 2 == 0;
-                String bg = isLight ? lightBg : darkBg;
+                boolean isHighlight = highlights != null && highlights.contains(pos);
+                boolean isSelected = selected != null && selected.equals(pos);
+
+                String bg = isSelected ? selectedHighlight :
+                        isHighlight ? (isLight ? lightHighlight : darkHighlight) :
+                                isLight ? lightBg : darkBg;
+
                 String fg = symbol.equals(" ") ? "" :
                         Character.isUpperCase(symbol.charAt(0)) ? whiteFg : blackFg;
 
@@ -487,6 +500,7 @@ public class Main {
         }
         System.out.println(" " + reset);
     }
+
 
     private volatile boolean gameLoaded = false;
 
