@@ -195,11 +195,15 @@ public class WebSocketHandler {
                     ? ChessGame.TeamColor.BLACK
                     : ChessGame.TeamColor.WHITE;
 
+            String opponentUsername = (opponent == ChessGame.TeamColor.WHITE)
+                    ? getUsernameFromUserId(game.getWhiteUserId(), userDAO)
+                    : getUsernameFromUserId(game.getBlackUserId(), userDAO);
+
             if (chessGame.isInCheckmate(opponent)) {
                 gameDAO.updateGameState(game.getId(), newStateJson, true);
-                broadcastToGame(gameID, GSON.toJson(new NotificationMessage(opponent + " is in checkmate! Game Over")), Set.of());
+                broadcastToGame(gameID, GSON.toJson(new NotificationMessage(opponentUsername + " is in checkmate! Game Over")), Set.of());
             } else if (chessGame.isInCheck(opponent)) {
-                broadcastToGame(gameID, GSON.toJson(new NotificationMessage(opponent + " is in check.")), Set.of());
+                broadcastToGame(gameID, GSON.toJson(new NotificationMessage(opponentUsername + " is in check.")), Set.of());
             }
 
         } catch (InvalidMoveException e) {
