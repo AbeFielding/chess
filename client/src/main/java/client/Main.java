@@ -10,6 +10,7 @@ import chess.ChessMove;
 import chess.ChessPosition;
 import client.websocket.ClientWebSocket;
 import websocket.commands.MakeMoveCommand;
+import chess.ChessPiece;
 
 public class Main {
     private enum State { PRELOGIN, POSTLOGIN }
@@ -317,7 +318,7 @@ public class Main {
 
     private void runGameplayUI(GameplayContext context) {
         System.out.println("Type 'help' to see available gameplay commands.");
-        drawChessBoard(context.isWhitePerspective());
+        drawChessBoard(context.game, context.isWhitePerspective());
 
         while (true) {
             System.out.print("(game)> ");
@@ -326,7 +327,7 @@ public class Main {
             if (input.equalsIgnoreCase("help")) {
                 printGameplayHelp();
             } else if (input.equalsIgnoreCase("redraw")) {
-                drawChessBoard(context.isWhitePerspective());
+                drawChessBoard(context.game, context.isWhitePerspective());
             } else if (input.equalsIgnoreCase("leave")) {
                 leaveGame(context);
                 return;
@@ -415,7 +416,7 @@ public class Main {
         return "" + col + pos.getRow();
     }
 
-    private void drawChessBoard(boolean whitePerspective) {
+    private void drawChessBoard(ChessGame game, boolean whitePerspective) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
         final String darkBg = "\u001B[48;5;21m";
@@ -423,24 +424,6 @@ public class Main {
         final String blackFg = "\u001B[38;5;0m";
         final String borderBg = "\u001B[48;5;236m";
         final String borderFg = "\u001B[38;5;15m";
-
-        Map<String, String> symbols = Map.ofEntries(
-                Map.entry("P", "P"), Map.entry("R", "R"), Map.entry("N", "N"),
-                Map.entry("B", "B"), Map.entry("Q", "Q"), Map.entry("K", "K"),
-                Map.entry("p", "p"), Map.entry("r", "r"), Map.entry("n", "n"),
-                Map.entry("b", "b"), Map.entry("q", "q"), Map.entry("k", "k")
-        );
-
-        String[][] board = {
-                {"r", "n", "b", "q", "k", "b", "n", "r"},
-                {"p", "p", "p", "p", "p", "p", "p", "p"},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {" ", " ", " ", " ", " ", " ", " ", " "},
-                {"P", "P", "P", "P", "P", "P", "P", "P"},
-                {"R", "N", "B", "Q", "K", "B", "N", "R"}
-        };
 
         char[] columns = whitePerspective ? "abcdefgh".toCharArray() : "hgfedcba".toCharArray();
         System.out.print(borderBg + borderFg + "   ");
@@ -456,24 +439,43 @@ public class Main {
 
             for (int j = 0; j < 8; j++) {
                 int boardCol = whitePerspective ? j : 7 - j;
-                String piece = board[boardRow][boardCol];
-                String symbol = symbols.getOrDefault(piece, " ");
+                int gameRow = boardRow + 1;
+                int gameCol = boardCol + 1;
+                ChessPiece piece = game.getBoard().getPiece(new ChessPosition(gameRow, gameCol));
+
+                String symbol = " ";
+                if (piece != null) {
+                    symbol = switch (piece.getPieceType()) {
+                        case PAWN -> "P";
+                        case ROOK -> "R";
+                        case KNIGHT -> "N";
+                        case BISHOP -> "B";
+                        case QUEEN -> "Q";
+                        case KING -> "K";
+                    };
+                    if (piece.getTeamColor() == ChessGame.TeamColor.BLACK) {
+                        symbol = symbol.toLowerCase();
+                    }
+                }
 
                 boolean isLight = (boardRow + boardCol) % 2 == 0;
                 String bg = isLight ? lightBg : darkBg;
-                String fg = piece.equals(" ") ? "" :
-                        Character.isUpperCase(piece.charAt(0)) ? whiteFg : blackFg;
+                String fg = symbol.equals(" ") ? "" :
+                        Character.isUpperCase(symbol.charAt(0)) ? whiteFg : blackFg;
 
                 System.out.print(bg + fg + " " + symbol + " " + reset);
             }
+
             System.out.println(borderBg + borderFg + " " + rowIdx + " " + reset);
         }
+
         System.out.print(borderBg + borderFg + "   ");
         for (char c : columns) {
             System.out.print(" " + c + " ");
         }
         System.out.println(" " + reset);
     }
+
 
 
 
