@@ -22,7 +22,7 @@ public class Main {
     private final ServerFacade server = new ServerFacade();
     private AuthData authData = null;
     private GameSummary[] lastGameList = new GameSummary[0];
-
+    public static Main.GameplayContext context;
     public static void main(String[] args) {
         new Main().run();
     }
@@ -224,7 +224,7 @@ public class Main {
             ChessGame game = new ChessGame();
             ClientWebSocket socket = new ClientWebSocket(game);
             socket.connect(authData.authToken(), gameId, ChessGame.TeamColor.valueOf(color.toUpperCase()));
-            GameplayContext context = new GameplayContext(authData.authToken(), gameId,
+            context = new GameplayContext(authData.authToken(), gameId,
                     ChessGame.TeamColor.valueOf(color.toUpperCase()), game, socket);
             runGameplayUI(context);
         } catch (Exception e) {
@@ -257,7 +257,7 @@ public class Main {
             ChessGame game = new ChessGame();
             ClientWebSocket socket = new ClientWebSocket(game);
             socket.connect(authData.authToken(), gameId, null);
-            GameplayContext context = new GameplayContext(authData.authToken(), gameId, null, game, socket);
+            context = new GameplayContext(authData.authToken(), gameId, null, game, socket);
             runGameplayUI(context);
         } catch (Exception e) {
             System.out.println("An error occurred while observing the game. Please try again.");
@@ -314,7 +314,6 @@ public class Main {
                 Thread.sleep(50);
             } catch (InterruptedException ignored) {}
         }
-        drawChessBoard(context.game, context.isWhitePerspective(), null, null);
         while (true) {
             System.out.print("(game)> ");
             String input = scanner.nextLine().trim();
@@ -401,7 +400,7 @@ public class Main {
         char col = (char) ('a' + pos.getColumn() - 1);
         return "" + col + pos.getRow();
     }
-    private void drawChessBoard(ChessGame game, boolean whitePerspective, Set<ChessPosition> highlights, ChessPosition selected) {
+    public static void drawChessBoard(ChessGame game, boolean whitePerspective, Set<ChessPosition> highlights, ChessPosition selected) {
         final String reset = "\u001B[0m";
         final String lightBg = "\u001B[48;5;250m";
         final String darkBg = "\u001B[48;5;21m";
@@ -459,6 +458,7 @@ public class Main {
             System.out.print(" " + c + " ");
         }
         System.out.println(" " + reset);
+        System.out.flush();
     }
     private volatile boolean gameLoaded = false;
     public boolean isGameLoaded() {
@@ -470,7 +470,7 @@ public class Main {
         String whitePlayer;
         String blackPlayer;
     }
-    static class GameplayContext {
+    public static class GameplayContext  {
         String authToken;
         int gameID;
         ChessGame.TeamColor playerColor;

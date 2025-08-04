@@ -10,12 +10,16 @@ import websocket.commands.MakeMoveCommand;
 import javax.websocket.*;
 import java.net.URI;
 
+import static client.Main.drawChessBoard;
+import static client.Main.context;
+
 @ClientEndpoint
 public class ClientWebSocket {
     private Session session;
     private final Gson gson = new Gson();
     private final ChessGame game;
     private boolean gameOver = false;
+    private volatile boolean gameLoaded = false;
 
     public ClientWebSocket(ChessGame game) {
         this.game = game;
@@ -59,6 +63,7 @@ public class ClientWebSocket {
                 game.copyFrom(load.getGame());
                 gameLoaded = true;
                 System.out.println("\n[Game updated]");
+                drawChessBoard(game, context.isWhitePerspective(), null, null);
 
                 if (load.getGame().isInCheckmate(game.getTeamTurn()) ||
                         load.getGame().isInStalemate(game.getTeamTurn())) {
@@ -75,7 +80,6 @@ public class ClientWebSocket {
             }
         }
     }
-
 
 
     public void close() {
@@ -96,10 +100,7 @@ public class ClientWebSocket {
         return game;
     }
 
-    private volatile boolean gameLoaded = false;
-
     public boolean isGameLoaded() {
         return gameLoaded;
     }
-
 }
