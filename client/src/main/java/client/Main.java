@@ -277,22 +277,49 @@ public class Main {
             System.out.println("The game is over. You cannot make any more moves.");
             return;
         }
+
         String[] parts = input.trim().split("\\s+");
-        if (parts.length < 3) {
-            System.out.println("Usage: move e2 e4");
+        if (parts.length < 3 || parts.length > 4) {
+            System.out.println("Usage: move e2 e4 [q|r|b|n] (optional for promotion)");
             return;
         }
+
         try {
             ChessPosition from = parsePosition(parts[1]);
             ChessPosition to = parsePosition(parts[2]);
-            ChessMove move = new ChessMove(from, to, null);
+            ChessPiece.PieceType promotion = null;
+
+            ChessPiece movingPiece = context.game.getBoard().getPiece(from);
+            if (movingPiece != null && movingPiece.getPieceType() == ChessPiece.PieceType.PAWN) {
+                int finalRow = (movingPiece.getTeamColor() == ChessGame.TeamColor.WHITE) ? 8 : 1;
+                if (to.getRow() == finalRow) {
+                    if (parts.length == 4) {
+                        switch (parts[3].toLowerCase()) {
+                            case "q" -> promotion = ChessPiece.PieceType.QUEEN;
+                            case "r" -> promotion = ChessPiece.PieceType.ROOK;
+                            case "b" -> promotion = ChessPiece.PieceType.BISHOP;
+                            case "n" -> promotion = ChessPiece.PieceType.KNIGHT;
+                            default -> {
+                                System.out.println("Invalid promotion piece. Please enter q, r, b, or n.");
+                                return;
+                            }
+                        }
+                    } else {
+                        System.out.println("Promotion required. Specify a piece: (move e7 e8 q), r, b, or n.");
+                        return;
+                    }
+                }
+            }
+
+            ChessMove move = new ChessMove(from, to, promotion);
             MakeMoveCommand cmd = new MakeMoveCommand(context.authToken, context.gameID, move);
             context.socket.send(cmd);
-            System.out.println("Move sent: " + parts[1] + " to " + parts[2]);
+            System.out.println("Move sent: " + parts[1] + " to " + parts[2] + (promotion != null ? " promoting to " + promotion : ""));
         } catch (Exception e) {
-            System.out.println("Invalid move input. Format should be like: move e2 e4");
+            System.out.println("Invalid move input. Try again using: move e2 e4 [q|r|b|n]");
         }
     }
+
     private ChessPosition parsePosition(String text) {
         text = text.toLowerCase();
         if (text.length() != 2) {
